@@ -40,6 +40,10 @@
     .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; padding-bottom: var(--space-6); border-bottom: 1px solid var(--border); }
     .page-head h2 { margin: 0; }
     .page-head p { margin: 4px 0 0; color: var(--text-secondary); }
+    .report-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--space-3); }
+    .report-grid > .k-card { min-width: 0; }
+    .span-4 { grid-column: span 4; } .span-6 { grid-column: span 6; } .span-8 { grid-column: span 8; }
+    .calendar-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-6); align-items: start; }
     .set-narrow { width: 320px; max-width: 100%; }
     .set-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-self: stretch; }
     .set-profile { display: flex; align-items: center; gap: var(--space-4); }
@@ -56,6 +60,8 @@
       .app .k-sidebar { display: none; }
       .content { padding: var(--space-6); }
       .settings { grid-template-columns: 1fr; gap: var(--space-6); }
+      .span-4, .span-6, .span-8 { grid-column: span 12; }
+      .calendar-layout { grid-template-columns: 1fr; }
       .settings > .k-navlist { position: static; }
       .set-pair { grid-template-columns: 1fr; }
       .task { grid-template-columns: 1fr; }
@@ -74,12 +80,18 @@
     var K = window.Klar, h = React.createElement;
 
     var people = { ava: 'Ava Thompson', noah: 'Noah Bennett', mia: 'Mia Larsen', leo: 'Leo Fischer' };
+    // Dates are relative to today, so the demo never goes stale.
+    var today = new Date();
+    function isoFromToday(days) { var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + days); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function dateOf(iso) { var parts = iso.split('-'); return new Date(+parts[0], +parts[1] - 1, +parts[2]); }
+    function shortDate(iso, lang) { return iso ? new Intl.DateTimeFormat(lang === 'da' ? 'da-DK' : 'en-US', { month: 'short', day: 'numeric' }).format(dateOf(iso)) : '-'; }
+    function longDate(iso, lang) { return new Intl.DateTimeFormat(lang === 'da' ? 'da-DK' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(dateOf(iso)); }
     var initialTasks = [
-      { id: 'KL-142', name: 'Redesign the landing page', owner: 'ava', status: 'In progress', due: 'Nov 4' },
-      { id: 'KL-139', name: 'Update pricing page', owner: 'noah', status: 'Done', due: 'Nov 1' },
-      { id: 'KL-131', name: 'Fix sign-in redirect', owner: 'mia', status: 'Overdue', due: 'Oct 28' },
-      { id: 'KL-128', name: 'Write onboarding emails', owner: 'leo', status: 'Due soon', due: 'Nov 6' },
-      { id: 'KL-124', name: 'Audit color contrast', owner: 'ava', status: 'In progress', due: 'Nov 8' }
+      { id: 'KL-142', name: 'Redesign the landing page', owner: 'ava', status: 'In progress', due: isoFromToday(3) },
+      { id: 'KL-139', name: 'Update pricing page', owner: 'noah', status: 'Done', due: isoFromToday(0) },
+      { id: 'KL-131', name: 'Fix sign-in redirect', owner: 'mia', status: 'Overdue', due: isoFromToday(-4) },
+      { id: 'KL-128', name: 'Write onboarding emails', owner: 'leo', status: 'Due soon', due: isoFromToday(5) },
+      { id: 'KL-124', name: 'Audit color contrast', owner: 'ava', status: 'In progress', due: isoFromToday(7) }
     ];
     var tone = { 'In progress': 'neutral', 'Done': 'success', 'Overdue': 'danger', 'Due soon': 'warning' };
     var statuses = ['In progress', 'Due soon', 'Done', 'Overdue'];
@@ -123,6 +135,7 @@
 
     function readRoute() {
       var parts = location.hash.slice(1).split('/');
+      if (parts[0] === 'calendar' || parts[0] === 'reports') return { view: parts[0], page: 'profile' };
       if (parts[0] !== 'settings') return { view: 'home', page: 'profile' };
       return { view: 'settings', page: settingsPages[parts[1]] ? parts[1] : 'profile' };
     }
@@ -167,13 +180,14 @@
       function navigate(nextView, page) {
         var next = { view: nextView, page: page || settingsPage };
         route[1](next);
-        history.replaceState(null, '', next.view === 'settings' ? '#settings/' + next.page : location.pathname + location.search);
+        var hash = next.view === 'settings' ? '#settings/' + next.page : next.view === 'calendar' || next.view === 'reports' ? '#' + next.view : '';
+        history.replaceState(null, '', hash || location.pathname + location.search);
       }
       function go(id) { navigate(id); }
       function openSettings(page) { navigate('settings', page); }
       function setPref(key, value) { prefs[1](function (p) { var n = Object.assign({}, p); n[key] = value; return n; }); }
       function openEditor(task) { editorKey[1](function (k) { return k + 1; }); editing[1](task); }
-      function newTask() { openEditor({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); }
+      function newTask() { openEditor({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: isoFromToday(14), isNew: true }); }
 
       function update(id, patch) { tasks[1](tasks[0].map(function (t) { return t.id === id ? Object.assign({}, t, patch) : t; })); }
       function remove(task) {
@@ -222,7 +236,7 @@
             { key: 'name', label: 'Task', strong: true },
             { key: 'owner', label: 'Owner', render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.owner], size: 'sm' }), people[r.owner]); } },
             { key: 'status', label: 'Status', render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } },
-            { key: 'due', label: 'Due' },
+            { key: 'due', label: 'Due', render: function (r) { return shortDate(r.due, lang[0]); } },
             { key: 'id', label: 'ID', mono: true, align: 'right' },
             { key: 'menu', label: '', width: 48, align: 'right', render: function (r) {
               return h('span', { onClick: function (e) { e.stopPropagation(); } },
@@ -239,7 +253,7 @@
           items: [
             { id: 'home', label: 'Overview', icon: 'home' },
             { id: 'inbox', label: 'Inbox', icon: 'inbox', count: 4 },
-            { id: 'cal', label: 'Calendar', icon: 'calendar' },
+            { id: 'calendar', label: 'Calendar', icon: 'calendar' },
             { id: 'reports', label: 'Reports', icon: 'chart' },
             { id: 'settings', label: 'Settings', icon: 'settings' },
             { section: 'Projects' },
@@ -248,19 +262,23 @@
             { id: 'p3', label: 'Archive', icon: 'folder' }],
           footer: h('div', { className: 'me' }, h(K.Avatar, { name: profile[0].name || '?', status: 'online' }), h('div', null, profile[0].name, h('small', null, 'Pro plan'))) }),
         h('div', { className: 'main' },
-          h(K.Topbar, { breadcrumb: onSettings ? ['Workspace', 'Settings'] : ['Workspace'], title: onSettings ? settingsPages[settingsPage].title : 'Overview', actions: h(React.Fragment, null,
+          h(K.Topbar, { breadcrumb: onSettings ? ['Workspace', 'Settings'] : ['Workspace'], title: onSettings ? settingsPages[settingsPage].title : view === 'calendar' ? 'Calendar' : view === 'reports' ? 'Reports' : 'Overview', actions: h(React.Fragment, null,
             h(K.Tooltip, { content: 'Search', shortcut: '⌘K', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'search', 'aria-label': 'Search', onClick: function () { palette[1](true); } })),
             onSettings ? null : h(K.Tooltip, { content: 'Settings', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'settings', 'aria-label': 'Settings', onClick: function () { openSettings(); } })),
             h(K.Switch, { 'aria-label': 'Dark mode', checked: dark, onChange: function (on) { chooseTheme(on ? 'dark' : 'light'); } }),
             onSettings ? null : h(K.Button, { size: 'sm', icon: 'plus', shortcut: 'C', onClick: newTask }, 'New task')) }),
           h('div', { className: 'content' },
-            onSettings ? h(Settings, { page: settingsPage, onPage: openSettings, profile: profile[0], onSaveProfile: profile[1], workspace: workspace[0], onSaveWorkspace: workspace[1], prefs: prefs[0], onPref: setPref, theme: theme[0], onTheme: chooseTheme, lang: lang[0], onLang: chooseLang }) : overview)),
+            onSettings ? h(Settings, { page: settingsPage, onPage: openSettings, profile: profile[0], onSaveProfile: profile[1], workspace: workspace[0], onSaveWorkspace: workspace[1], prefs: prefs[0], onPref: setPref, theme: theme[0], onTheme: chooseTheme, lang: lang[0], onLang: chooseLang })
+              : view === 'reports' ? h(Reports, { lang: lang[0] })
+              : view === 'calendar' ? h(CalendarPage, { tasks: tasks[0], lang: lang[0], weekStart: prefs[0].weekStart, onOpenTask: openEditor })
+              : overview)),
         h(K.CommandPalette, { overlay: true, open: palette[0], autoFocus: true, onClose: function () { palette[1](false); }, items: [
           { group: 'Suggestions', label: 'New task', icon: 'plus', shortcut: 'C', onSelect: function () { palette[1](false); go('home'); newTask(); } },
           { group: 'Suggestions', label: dark ? 'Switch to light mode' : 'Switch to dark mode', icon: 'settings', onSelect: function () { palette[1](false); chooseTheme(dark ? 'light' : 'dark'); } },
           { group: 'Go to', label: 'Overview', icon: 'home', shortcut: 'G O', onSelect: function () { palette[1](false); go('home'); } },
           { group: 'Go to', label: 'Inbox', icon: 'inbox', shortcut: 'G I', onSelect: function () { palette[1](false); go('inbox'); } },
-          { group: 'Go to', label: 'Calendar', icon: 'calendar', shortcut: 'G C', onSelect: function () { palette[1](false); go('cal'); } },
+          { group: 'Go to', label: 'Calendar', icon: 'calendar', shortcut: 'G C', onSelect: function () { palette[1](false); go('calendar'); } },
+          { group: 'Go to', label: 'Reports', icon: 'chart', shortcut: 'G R', onSelect: function () { palette[1](false); go('reports'); } },
           { group: 'Go to', label: 'Settings', icon: 'settings', shortcut: 'G S', onSelect: function () { palette[1](false); openSettings('profile'); } },
           { group: 'Go to', label: 'Notification settings', icon: 'bell', onSelect: function () { palette[1](false); openSettings('notifications'); } },
           { group: 'Account', label: 'Sign out', icon: 'logout', onSelect: function () { palette[1](false); K.toast('Signed out'); } }] }),
@@ -296,10 +314,95 @@
               h(K.ListRow, { icon: 'plus', title: 'Task created', subtitle: 'Oct 21' }))),
           h('aside', { className: 'task__side' },
             h(K.Dropdown, { label: 'Owner', value: draft[0].owner, onChange: set('owner'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) }),
-            h(K.TextField, { label: 'Due', value: draft[0].due, onChange: set('due') }),
+            h(K.DatePicker, { label: 'Due', value: draft[0].due, onChange: set('due') }),
             h('div', { className: 'k-field' },
               h('span', { className: 'k-field__label' }, 'Status'),
               h(K.RadioGroup, { 'aria-label': 'Status', value: draft[0].status, onChange: set('status'), options: statuses })))));
+    }
+
+    /* ---------- Reports ---------- */
+    // Deterministic numbers that look like real data, so the demo is the same on every visit.
+    function wave(n, base, spread, seed, growth) {
+      var out = [];
+      for (var i = 0; i < n; i++) out.push(Math.max(0, Math.round(base * (1 + (growth || 0) * i / n) + spread * (Math.sin(i * 1.3 + seed) * 0.6 + Math.sin(i * 0.4 + seed * 2) * 0.4))));
+      return out;
+    }
+    function periodLabels(period, lang) {
+      var locale = lang === 'da' ? 'da-DK' : 'en-US', out = [], d;
+      if (period === '12 months') {
+        for (var m = 11; m >= 0; m--) { d = new Date(today.getFullYear(), today.getMonth() - m, 1); out.push(new Intl.DateTimeFormat(locale, { month: 'short' }).format(d)); }
+        return out;
+      }
+      var days = period === '7 days' ? 7 : 30;
+      for (var i = days - 1; i >= 0; i--) { d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i); out.push(new Intl.DateTimeFormat(locale, period === '7 days' ? { weekday: 'short' } : { month: 'short', day: 'numeric' }).format(d)); }
+      return out;
+    }
+    var money = function (v) { return '$' + Math.round(v).toLocaleString('en-US'); };
+    var moneyAxis = function (v) { return '$' + new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v); };
+    var reportScale = { '7 days': 1, '30 days': 4.3, '12 months': 52 };
+
+    function Reports(p) {
+      var period = React.useState('30 days'), k = period[0], scale = reportScale[k];
+      var labels = periodLabels(k, p.lang), n = labels.length;
+      var revenue = wave(n, 1600 * scale / (k === '12 months' ? 4.3 : 1), 380 * scale / (k === '12 months' ? 4.3 : 1), 1, 0.25);
+      var previous = wave(n, 1450 * scale / (k === '12 months' ? 4.3 : 1), 300 * scale / (k === '12 months' ? 4.3 : 1), 4, 0.1);
+      var completed = wave(Math.min(n, 12), 18, 6, 2, 0.2), created = wave(Math.min(n, 12), 21, 5, 5, 0.05);
+      var barLabels = labels.slice(-Math.min(n, 12));
+      var total = revenue.reduce(function (a, b) { return a + b; }, 0), before = previous.reduce(function (a, b) { return a + b; }, 0);
+      var change = ((total - before) / before) * 100;
+
+      return h('div', { className: 'inner' },
+        h('div', { className: 'head' },
+          h('div', null, h('h1', { className: 'k-h1' }, 'Reports'), h('p', null, 'How the team is doing, compared with the period before.')),
+          h(K.SegmentedControl, { 'aria-label': 'Period', options: ['7 days', '30 days', '12 months'], value: k, onChange: period[1] })),
+        h('div', { className: 'stats' },
+          h(K.Stat, { label: 'Revenue', icon: 'chart', value: money(total), delta: (change >= 0 ? '+' : '') + change.toFixed(1) + '%', trend: change >= 0 ? 'up' : 'down', caption: 'vs. last period', chart: h(K.Sparkline, { data: revenue.slice(-12), label: 'Revenue trend' }) }),
+          h(K.Stat, { label: 'Tasks completed', icon: 'circle-check', value: String(completed.reduce(function (a, b) { return a + b; }, 0)), delta: '+18', trend: 'up', caption: 'vs. last period', chart: h(K.Sparkline, { data: completed, label: 'Tasks completed trend' }) }),
+          h(K.Stat, { label: 'Hours logged', icon: 'calendar', value: Math.round(312 * scale).toLocaleString('en-US'), delta: '+6%', trend: 'up', caption: 'vs. last period', chart: h(K.Sparkline, { data: wave(12, 30, 8, 3, 0.1), label: 'Hours logged trend' }) }),
+          h(K.Stat, { label: 'Active projects', icon: 'folder', value: '12', delta: '0', trend: 'flat', caption: 'no change', chart: h(K.Sparkline, { data: [11, 12, 12, 11, 12, 12, 13, 12, 12, 12, 12, 12], label: 'Active projects trend' }) })),
+        h('div', { className: 'report-grid' },
+          h(K.Card, { className: 'span-8', eyebrow: 'Revenue', title: money(total) },
+            h(K.LineChart, { 'aria-label': 'Revenue per ' + (k === '12 months' ? 'month' : 'day'), area: true, height: 260, format: money, formatAxis: moneyAxis,
+              series: [{ key: 'now', label: 'This period' }, { key: 'before', label: 'Previous period' }],
+              data: labels.map(function (l, i) { return { label: l, now: revenue[i], before: previous[i] }; }) })),
+          h(K.Card, { className: 'span-4', eyebrow: 'Hours', title: 'Top projects' },
+            h(K.BarList, { 'aria-label': 'Hours by project', format: function (v) { return Math.round(v * scale / 4.3) + ' h'; }, items: [
+              { label: 'Website', value: 128, icon: 'folder' }, { label: 'Mobile app', value: 96, icon: 'folder' }, { label: 'Design system', value: 71, icon: 'folder' },
+              { label: 'Onboarding', value: 44, icon: 'folder' }, { label: 'Internal tools', value: 23, icon: 'folder' }] })),
+          h(K.Card, { className: 'span-6', eyebrow: 'Tasks', title: 'Created and completed' },
+            h(K.BarChart, { 'aria-label': 'Tasks created and completed', height: 220, format: function (v) { return v + ' tasks'; },
+              series: [{ key: 'completed', label: 'Completed' }, { key: 'created', label: 'Created' }],
+              data: barLabels.map(function (l, i) { return { label: l, completed: completed[i], created: created[i] }; }) })),
+          h(K.Card, { className: 'span-6', eyebrow: 'Team', title: 'Tasks completed per person' },
+            h(K.BarList, { 'aria-label': 'Tasks completed per person', format: function (v) { return Math.round(v * scale / 4.3); }, items: Object.keys(people).map(function (id, i) { return { label: people[id], value: [34, 27, 19, 12][i] }; }) }))));
+    }
+
+    /* ---------- Calendar ---------- */
+    var meetings = [
+      { id: 'm1', offset: -2, time: '11:00', title: 'Retro' },
+      { id: 'm2', offset: 1, time: '10:00', title: 'Design review' },
+      { id: 'm3', offset: 2, time: '14:30', title: 'Sprint planning' },
+      { id: 'm4', offset: 3, time: '13:00', title: 'Copy review' },
+      { id: 'm5', offset: 8, time: '09:00', title: 'Client call' },
+      { id: 'm6', offset: 9, time: '15:00', title: 'Launch rehearsal' },
+      { id: 'm7', offset: 15, time: '10:30', title: 'Quarterly review' }
+    ];
+
+    function CalendarPage(p) {
+      var day = React.useState(isoFromToday(0));
+      var events = p.tasks.map(function (t) { return { id: t.id, date: t.due, title: t.name, task: t }; })
+        .concat(meetings.map(function (m) { return { id: m.id, date: isoFromToday(m.offset), time: m.time, title: m.title }; }));
+      var agenda = events.filter(function (e) { return e.date === day[0]; }).sort(function (a, b) { return (a.time || '99').localeCompare(b.time || '99'); });
+      function open(ev) { if (ev.task) p.onOpenTask(ev.task); else K.toast(ev.title + ' at ' + ev.time); }
+      return h('div', { className: 'inner' },
+        h('div', { className: 'head' },
+          h('div', null, h('h1', { className: 'k-h1' }, 'Calendar'), h('p', null, 'Deadlines and meetings for the team. Click a day to see its plan.'))),
+        h('div', { className: 'calendar-layout' },
+          h(K.Calendar, { events: events, value: day[0], onChange: day[1], onEventClick: open, weekStartsOn: p.weekStart === 'Sunday' ? 0 : 1 }),
+          h(K.List, { header: longDate(day[0], p.lang) },
+            agenda.length ? agenda.map(function (ev) {
+              return h(K.ListRow, { key: ev.id, icon: ev.task ? 'circle-check' : 'calendar', title: ev.title, subtitle: ev.task ? 'Deadline · ' + people[ev.task.owner] : 'Meeting', value: ev.time || null, accessory: 'chevron', onClick: function () { open(ev); } });
+            }) : h(K.ListRow, { title: 'Nothing planned', subtitle: 'A quiet day.' }))));
     }
 
     function PageHead(p) {
@@ -368,7 +471,7 @@
               { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }] })),
           h(K.SettingsSection, { title: 'Start page', description: 'The page Klar opens on.' },
             h(K.Dropdown, { 'aria-label': 'Start page', value: p.prefs.startPage, onChange: function (v) { p.onPref('startPage', v); }, className: 'set-narrow', options: [
-              { value: 'home', label: 'Overview', icon: 'home' }, { value: 'inbox', label: 'Inbox', icon: 'inbox' }, { value: 'cal', label: 'Calendar', icon: 'calendar' }] }))));
+              { value: 'home', label: 'Overview', icon: 'home' }, { value: 'inbox', label: 'Inbox', icon: 'inbox' }, { value: 'calendar', label: 'Calendar', icon: 'calendar' }] }))));
     }
 
     function LanguagePage(p) {
