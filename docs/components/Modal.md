@@ -12,3 +12,5 @@ Large centered screen for editing and details - a task, a record, a form with mo
 The consumer provides: `title`, optionally `description`, content as children, `footer`, `open`, and `onClose`.
 
 Use `Dialog` for short decisions; `Modal` for editing and details; `Drawer` only when the list behind must stay visible.
+
+Focus: opening moves focus inside (to the first field, or the first button), Tab and Shift+Tab stay inside, and closing returns focus to whatever opened it.

@@ -8,3 +8,5 @@
 - Drops 4 px into place as it fades in and leaves faster than it came. Keep it rendered and toggle `open` to get the exit animation; the search resets each time it opens.
 
 The consumer provides: `items` (`label`, `group`, `icon`, `shortcut`, `onSelect`), `open`, `onClose`, and the shortcut itself (⌘K / Ctrl K) that opens it.
+
+Focus: opening moves focus inside (to the first field, or the first button), Tab and Shift+Tab stay inside, and closing returns focus to whatever opened it.

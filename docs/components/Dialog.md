@@ -10,3 +10,5 @@ Modal dialog for decisions - typically confirming something destructive.
 The consumer provides: `title` (a question), `message`, optionally content as children, `actions` (`label`, `variant`, `onClick`), `open`, `onClose`, and focus management.
 
 Do: name the action precisely ("Delete project", not "OK").
+
+Focus: opening moves focus inside (to the first field, or the first button), Tab and Shift+Tab stay inside, and closing returns focus to whatever opened it.

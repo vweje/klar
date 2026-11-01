@@ -8,3 +8,5 @@ Square checkbox for choices that are saved with a button - or for multi-select l
 The consumer provides: `label`, optionally `description`, and `checked`/`onChange` or `defaultChecked`.
 
 Use `Switch` instead when the change takes effect immediately.
+
+`indeterminate` shows a dash instead of a check: some, but not all, of a group is checked. It reads as "mixed" to screen readers.

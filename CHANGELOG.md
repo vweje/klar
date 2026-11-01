@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Focus: Dialog, Modal, Drawer and CommandPalette move focus inside when they open, keep Tab inside, and give focus back when they close.
+- `Table`: sortable columns, row selection with a bulk action bar, a Columns menu, and virtualized rows above 100 with a sticky header. `Checkbox` has `indeterminate`.
+- `Kanban` drags with pointer events, so it works with fingers (press and hold) and pens too.
+- New fields: `NumberField`, `CurrencyField` (1.234,50 kr.), `CodeInput`, `PasswordField` with a strength meter, `DateRangePicker` with presets, `TimePicker`, and `Combobox` with async search.
+- New charts: `DonutChart`, `Heatmap`, and `stacked` on `BarChart`.
+- `Markdown`, `MarkdownEditor` and `CommentThread` with @mentions; `Gantt` for plans over time.
+- klar.vweje.dk/components shows every component live, and docs/redesign.md explains how to move an existing dashboard onto Klar.
 - `Calendar` has week and day views (`views`, `view`) with a time grid, all-day row, side-by-side overlaps and a now line, plus right-click menus on days, half hours and events (`dayMenu`, `eventMenu`). `date`/`onDateChange` replace `month`/`onMonthChange`.
 - `Kanban` (drag and drop, Alt + arrow keys), `MultiSelect`, `FileDrop`, `Timeline`, `Stepper`, `Popover` and `NotificationInbox`.
 - `Modal` takes `size="md"` for short forms and guides.

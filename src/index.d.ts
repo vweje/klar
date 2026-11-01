@@ -1,7 +1,7 @@
 import type * as React from 'react';
 
 /** Built-in component texts (aria labels, placeholders). English by default. */
-export interface KlarStrings { search: string; selected: string; breadcrumb: string; mainNavigation: string; loading: string; pagination: string; previous: string; next: string; close: string; commands: string; commandPlaceholder: string; searchCommands: string; noResults: string; navigate: string; select: string; /** BCP 47 locale for dates and numbers, e.g. 'en-US' or 'da-DK'. */ locale: string; today: string; previousMonth: string; nextMonth: string; more: string; chooseDate: string; previousWeek: string; nextWeek: string; previousDay: string; nextDay: string; view: string; month: string; week: string; day: string; allDay: string; notifications: string; markAllRead: string; all: string; unread: string; caughtUp: string; dropFiles: string; browse: string; remove: string; tooLarge: string; wrongType: string; uploaded: string; moveHint: string; empty: string; completed: string }
+export interface KlarStrings { search: string; selected: string; breadcrumb: string; mainNavigation: string; loading: string; pagination: string; previous: string; next: string; close: string; commands: string; commandPlaceholder: string; searchCommands: string; noResults: string; navigate: string; select: string; /** BCP 47 locale for dates and numbers, e.g. 'en-US' or 'da-DK'. */ locale: string; today: string; previousMonth: string; nextMonth: string; more: string; chooseDate: string; previousWeek: string; nextWeek: string; previousDay: string; nextDay: string; view: string; month: string; week: string; day: string; allDay: string; notifications: string; markAllRead: string; all: string; unread: string; caughtUp: string; dropFiles: string; browse: string; remove: string; tooLarge: string; wrongType: string; uploaded: string; moveHint: string; empty: string; completed: string; bulkActions: string; clearSelection: string; columns: string; selectAll: string; selectRow: string; showPassword: string; hidePassword: string; passwordStrength: string; weak: string; fair: string; good: string; strong: string; digit: string; of: string; increase: string; decrease: string; chooseRange: string; last7: string; last30: string; thisMonth: string; lastMonth: string; thisYear: string; chooseTime: string; searching: string; loadFailed: string; tryAgain: string; typeToSearch: string; clear: string; other: string; total: string; less: string; moreLabel: string; write: string; preview: string; bold: string; italic: string; list: string; link: string; code: string; nothingToPreview: string; comment: string; writeComment: string; toSend: string; noComments: string }
 /** Bundled translations. */
 export declare const locales: { en: KlarStrings; da: KlarStrings };
 /** Switch built-in texts globally: setStrings('da'), or pass your own partial set. Call once before rendering. */
@@ -9,7 +9,7 @@ export declare function setStrings(next: 'en' | 'da' | Partial<KlarStrings>): Kl
 /** Sets data-theme on <html> with one crossfade (View Transitions where supported). 'system' follows the OS setting. */
 export declare function setTheme(theme: 'light' | 'dark' | 'system'): void;
 
-export type IconName = 'chevron-right' | 'chevron-down' | 'arrow-right' | 'search' | 'check' | 'xmark' | 'plus' | 'more' | 'home' | 'inbox' | 'folder' | 'calendar' | 'chart' | 'person' | 'settings' | 'bell' | 'lock' | 'info' | 'circle-check' | 'alert' | 'chevron-left' | 'trend-up' | 'trend-down' | 'edit' | 'copy' | 'trash' | 'upload' | 'filter' | 'logout' | 'file';
+export type IconName = 'chevron-right' | 'chevron-down' | 'arrow-right' | 'search' | 'check' | 'xmark' | 'plus' | 'more' | 'home' | 'inbox' | 'folder' | 'calendar' | 'chart' | 'person' | 'settings' | 'bell' | 'lock' | 'info' | 'circle-check' | 'alert' | 'chevron-left' | 'trend-up' | 'trend-down' | 'edit' | 'copy' | 'trash' | 'upload' | 'filter' | 'logout' | 'file' | 'chevron-up' | 'minus' | 'eye' | 'eye-off' | 'clock' | 'message' | 'bold' | 'italic' | 'list' | 'link' | 'code' | 'send';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; icon?: IconName; iconRight?: IconName; shortcut?: string; block?: boolean }
 export declare function Button(props: ButtonProps): React.ReactElement;
@@ -20,7 +20,7 @@ export declare function TextField(props: TextFieldProps): React.ReactElement;
 export interface SearchFieldProps extends React.InputHTMLAttributes<HTMLInputElement> { placeholder?: string; shortcut?: string | false }
 export declare function SearchField(props: SearchFieldProps): React.ReactElement;
 
-export interface CheckboxProps { checked?: boolean; defaultChecked?: boolean; onChange?: (checked: boolean) => void; label?: React.ReactNode; description?: React.ReactNode; disabled?: boolean; 'aria-label'?: string; className?: string }
+export interface CheckboxProps { /** Shows a dash: some, not all, of a group is checked. */ indeterminate?: boolean; checked?: boolean; defaultChecked?: boolean; onChange?: (checked: boolean) => void; label?: React.ReactNode; description?: React.ReactNode; disabled?: boolean; 'aria-label'?: string; className?: string }
 export declare function Checkbox(props: CheckboxProps): React.ReactElement;
 
 export interface SwitchProps { checked?: boolean; defaultChecked?: boolean; onChange?: (checked: boolean) => void; label?: string; disabled?: boolean; 'aria-label'?: string; className?: string }
@@ -92,8 +92,14 @@ export interface TabsProps { items: Array<{ id: string; label: React.ReactNode; 
 export declare function Tabs(props: TabsProps): React.ReactElement;
 export interface StatProps { label: React.ReactNode; value: React.ReactNode; delta?: string; trend?: 'up' | 'down' | 'flat'; caption?: React.ReactNode; icon?: IconName; /** A small chart next to the value, e.g. a Sparkline. */ chart?: React.ReactNode; className?: string }
 export declare function Stat(props: StatProps): React.ReactElement;
-export interface TableColumn<T = any> { key: string; label: React.ReactNode; align?: 'left' | 'right' | 'center'; width?: number | string; strong?: boolean; mono?: boolean; render?: (row: T) => React.ReactNode }
-export interface TableProps<T = any> { columns: TableColumn<T>[]; rows: T[]; onRowClick?: (row: T) => void; /** Right-click anywhere on a row opens these items. Use the same actions as the row's ⋯ menu. */ rowMenu?: (row: T) => MenuItem[]; className?: string }
+export interface TableColumn<T = any> { key: string; label: React.ReactNode; align?: 'left' | 'right' | 'center'; width?: number | string; strong?: boolean; mono?: boolean; render?: (row: T) => React.ReactNode; /** Click the header to sort. */ sortable?: boolean; /** The value to sort by when it differs from row[key]. */ sortValue?: (row: T) => string | number; /** false keeps it out of the Columns menu. */ hideable?: boolean }
+export interface TableSort { key: string; dir: 'asc' | 'desc' }
+export interface TableProps<T = any> { columns: TableColumn<T>[]; rows: T[]; onRowClick?: (row: T) => void; /** Right-click anywhere on a row opens these items. Use the same actions as the row's ⋯ menu. */ rowMenu?: (row: T) => MenuItem[];
+  sort?: TableSort | null; defaultSort?: TableSort | null; onSortChange?: (sort: TableSort | null) => void; /** Sort on the server: the table only reports the sort. */ manualSort?: boolean;
+  /** Adds a checkbox per row; rows are identified by their id. */ selectable?: boolean; selected?: Array<string | number>; defaultSelected?: Array<string | number>; onSelectedChange?: (ids: Array<string | number>) => void;
+  /** Buttons in the bar that appears above the table while rows are selected. */ bulkActions?: (rows: T[]) => React.ReactNode;
+  /** A Columns menu for hiding columns. */ columnToggle?: boolean; hiddenColumns?: string[]; defaultHiddenColumns?: string[]; onHiddenColumnsChange?: (keys: string[]) => void;
+  /** Only render the rows in view. On by default above 100 rows. */ virtualize?: boolean; maxHeight?: number; rowHeight?: number; 'aria-label'?: string; className?: string }
 export declare function Table(props: TableProps): React.ReactElement;
 export interface EmptyStateProps { title: React.ReactNode; description?: React.ReactNode; icon?: IconName; action?: React.ReactNode; className?: string }
 export declare function EmptyState(props: EmptyStateProps): React.ReactElement;
@@ -126,7 +132,8 @@ export declare function Modal(props: ModalProps): React.ReactElement | null;
 export interface ChartSeries { key: string; label: string }
 export interface ChartProps { /** Rows with a `label` and a number per series key. */ data: Array<{ label: string; [key: string]: string | number }>; /** Defaults to one series with key `value`. Only the first two are drawn. */ series?: ChartSeries[]; height?: number; /** Formats values in the tooltip and the screen reader table. */ format?: (value: number) => string; /** Formats the y-axis ticks. Compact numbers by default (1K, 2.5M). */ formatAxis?: (value: number) => string; 'aria-label'?: string; className?: string }
 export declare function LineChart(props: ChartProps & { /** A light wash under the first series. */ area?: boolean }): React.ReactElement;
-export declare function BarChart(props: ChartProps): React.ReactElement;
+/** stacked shows up to four series as one column per group, in steps of gray. */
+export declare function BarChart(props: ChartProps & { stacked?: boolean }): React.ReactElement;
 export interface BarListItem { id?: string; label: string; value: number; icon?: IconName }
 export declare function BarList(props: { items: BarListItem[]; format?: (value: number) => string; 'aria-label'?: string; className?: string }): React.ReactElement;
 export declare function Sparkline(props: { data: number[]; width?: number; height?: number; label?: string; className?: string }): React.ReactElement | null;
@@ -142,7 +149,7 @@ export interface CalendarProps { size?: 'lg' | 'sm'; value?: string; defaultValu
   events?: CalendarEvent[]; onEventClick?: (event: CalendarEvent) => void;
   /** Right-click on a day (and in week and day view, on a half hour, passed as 'HH:MM'). */ dayMenu?: (date: string, time?: string) => MenuItem[];
   /** Right-click on an event. */ eventMenu?: (event: CalendarEvent) => MenuItem[];
-  maxEvents?: number; weekStartsOn?: 0 | 1; /** Week and day view open scrolled to this hour. Default 7. */ scrollToHour?: number; /** Clicking a day in week view opens it in day view. Default true. */ dayFromWeek?: boolean; autoFocus?: boolean; className?: string }
+  maxEvents?: number; weekStartsOn?: 0 | 1; /** Which month arrows to show. */ nav?: 'both' | 'prev' | 'next' | 'none'; rangeStart?: string; rangeEnd?: string; hoverDate?: string; onDayHover?: (date: string) => void; /** Week and day view open scrolled to this hour. Default 7. */ scrollToHour?: number; /** Clicking a day in week view opens it in day view. Default true. */ dayFromWeek?: boolean; autoFocus?: boolean; className?: string }
 export declare function Calendar(props: CalendarProps): React.ReactElement;
 export interface DatePickerProps { label?: string; hint?: string; error?: string; placeholder?: string; value?: string; defaultValue?: string; onChange?: (date: string) => void; weekStartsOn?: 0 | 1; name?: string; disabled?: boolean; id?: string; 'aria-label'?: string; className?: string }
 export declare function DatePicker(props: DatePickerProps): React.ReactElement;
@@ -167,4 +174,40 @@ export declare function Timeline(props: { items: TimelineItem[]; 'aria-label'?: 
 export interface StepperProps { steps: Array<{ id?: string; label: string; description?: string }>; /** Index of the current step. */ current: number; /** Lets people go back to a completed step. */ onStepClick?: (index: number) => void; 'aria-label'?: string; className?: string }
 export declare function Stepper(props: StepperProps): React.ReactElement;
 
-declare global { interface Window { Klar: { Button: typeof Button; TextField: typeof TextField; SearchField: typeof SearchField; Checkbox: typeof Checkbox; Switch: typeof Switch; SegmentedControl: typeof SegmentedControl; List: typeof List; ListRow: typeof ListRow; Card: typeof Card; Badge: typeof Badge; ProgressBar: typeof ProgressBar; Topbar: typeof Topbar; Sidebar: typeof Sidebar; NavList: typeof NavList; SettingsSection: typeof SettingsSection; Dialog: typeof Dialog; Icon: typeof Icon; Kbd: typeof Kbd; Textarea: typeof Textarea; Select: typeof Select; Dropdown: typeof Dropdown; RadioGroup: typeof RadioGroup; Slider: typeof Slider; Avatar: typeof Avatar; AvatarGroup: typeof AvatarGroup; Tooltip: typeof Tooltip; Tabs: typeof Tabs; Stat: typeof Stat; Table: typeof Table; EmptyState: typeof EmptyState; Skeleton: typeof Skeleton; Spinner: typeof Spinner; Pagination: typeof Pagination; Accordion: typeof Accordion; Callout: typeof Callout; Toast: typeof Toast; Toaster: typeof Toaster; MenuPanel: typeof MenuPanel; Menu: typeof Menu; ContextMenu: typeof ContextMenu; CommandPalette: typeof CommandPalette; Drawer: typeof Drawer; Modal: typeof Modal; LineChart: typeof LineChart; BarChart: typeof BarChart; BarList: typeof BarList; Sparkline: typeof Sparkline; Calendar: typeof Calendar; DatePicker: typeof DatePicker; Popover: typeof Popover; NotificationInbox: typeof NotificationInbox; Kanban: typeof Kanban; MultiSelect: typeof MultiSelect; FileDrop: typeof FileDrop; Timeline: typeof Timeline; Stepper: typeof Stepper; toast: ToastFn; setStrings: typeof setStrings; setTheme: typeof setTheme; locales: typeof locales } } }
+// ---- Fields ----
+interface FieldBase { label?: string; hint?: string; error?: string; id?: string; name?: string; disabled?: boolean; 'aria-label'?: string; className?: string }
+export interface NumberFieldProps extends FieldBase { value?: number | null; defaultValue?: number | null; onChange?: (value: number | null) => void; min?: number; max?: number; step?: number; decimals?: number; /** After the number, e.g. 'h' or '%'. */ unit?: string; /** Before the number, e.g. '$'. */ prefix?: string; /** Steppers for - and +. Default true. */ stepper?: boolean; locale?: string; placeholder?: string }
+export declare function NumberField(props: NumberFieldProps): React.ReactElement;
+/** An amount: two decimals, written the local way. DKK is written 1.234,50 kr. */
+export declare function CurrencyField(props: NumberFieldProps & { currency?: 'DKK' | 'SEK' | 'NOK' | 'EUR' | 'USD' | 'GBP' | string }): React.ReactElement;
+export interface CodeInputProps extends FieldBase { length?: number; value?: string; defaultValue?: string; onChange?: (code: string) => void; /** Called when every box is filled. */ onComplete?: (code: string) => void; autoFocus?: boolean }
+export declare function CodeInput(props: CodeInputProps): React.ReactElement;
+export interface PasswordFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'defaultValue'> { label?: string; hint?: string; error?: string; value?: string; defaultValue?: string; /** Shows a four-step strength meter: use it where a new password is chosen. */ strength?: boolean }
+export declare function PasswordField(props: PasswordFieldProps): React.ReactElement;
+export interface DateRange { start: string; end: string }
+export interface DateRangePickerProps extends FieldBase { value?: DateRange | null; defaultValue?: DateRange | null; onChange?: (range: DateRange) => void; presets?: Array<{ label: string; start: string; end: string }>; placeholder?: string; weekStartsOn?: 0 | 1 }
+export declare function DateRangePicker(props: DateRangePickerProps): React.ReactElement;
+export interface TimePickerProps extends FieldBase { /** 24-hour 'HH:MM'. */ value?: string | null; defaultValue?: string | null; onChange?: (time: string | null) => void; /** Minutes between suggestions. Default 15. */ step?: number; min?: string; max?: string; placeholder?: string }
+export declare function TimePicker(props: TimePickerProps): React.ReactElement;
+export interface ComboboxOption { value: string; label: string; description?: string; avatar?: string; icon?: IconName }
+export interface ComboboxProps extends FieldBase { value?: ComboboxOption | null; defaultValue?: ComboboxOption | null; onChange?: (option: ComboboxOption | null) => void; /** Called as people type (after debounce). */ loadOptions: (query: string) => ComboboxOption[] | Promise<ComboboxOption[]>; defaultOptions?: ComboboxOption[]; debounce?: number; minChars?: number; placeholder?: string }
+export declare function Combobox(props: ComboboxProps): React.ReactElement;
+
+// ---- More charts ----
+export declare function DonutChart(props: { data: Array<{ label: string; value: number }>; format?: (value: number) => string; centerLabel?: string; size?: number; thickness?: number; 'aria-label'?: string; className?: string }): React.ReactElement;
+/** One cell per day: data maps ISO dates to numbers. */
+export declare function Heatmap(props: { data: Record<string, number>; weeks?: number; end?: string; weekStartsOn?: 0 | 1; format?: (value: number) => string; 'aria-label'?: string; className?: string }): React.ReactElement;
+
+// ---- Text ----
+/** Safe markdown: bold, italic, code, links, lists, quotes and @mentions of known people. Never raw HTML. */
+export declare function Markdown(props: { children?: string; text?: string; people?: Array<string | { name: string }>; className?: string }): React.ReactElement;
+export interface MarkdownEditorProps { label?: string; hint?: string; error?: string; value?: string; defaultValue?: string; onChange?: (value: string) => void; placeholder?: string; rows?: number; maxLength?: number; /** People who can be @mentioned. */ people?: Array<string | { name: string }>; id?: string; className?: string }
+export declare function MarkdownEditor(props: MarkdownEditorProps): React.ReactElement;
+export interface Comment { id: string; author: string; time?: string; body: string }
+export declare function CommentThread(props: { comments: Comment[]; people?: Array<string | { name: string }>; currentUser?: string; onSubmit?: (body: string, mentioned: string[]) => void; placeholder?: string; className?: string }): React.ReactElement;
+
+// ---- Planning ----
+export interface GanttItem { id?: string; label: string; start: string; end?: string; /** 0-1. */ progress?: number; group?: string; milestone?: boolean; avatar?: string; [key: string]: unknown }
+export declare function Gantt(props: { items: GanttItem[]; from?: string; to?: string; scale?: 'day' | 'week'; labelWidth?: number; maxHeight?: number; onItemClick?: (item: GanttItem) => void; 'aria-label'?: string; className?: string }): React.ReactElement;
+
+declare global { interface Window { Klar: { Button: typeof Button; TextField: typeof TextField; SearchField: typeof SearchField; Checkbox: typeof Checkbox; Switch: typeof Switch; SegmentedControl: typeof SegmentedControl; List: typeof List; ListRow: typeof ListRow; Card: typeof Card; Badge: typeof Badge; ProgressBar: typeof ProgressBar; Topbar: typeof Topbar; Sidebar: typeof Sidebar; NavList: typeof NavList; SettingsSection: typeof SettingsSection; Dialog: typeof Dialog; Icon: typeof Icon; Kbd: typeof Kbd; Textarea: typeof Textarea; Select: typeof Select; Dropdown: typeof Dropdown; RadioGroup: typeof RadioGroup; Slider: typeof Slider; Avatar: typeof Avatar; AvatarGroup: typeof AvatarGroup; Tooltip: typeof Tooltip; Tabs: typeof Tabs; Stat: typeof Stat; Table: typeof Table; EmptyState: typeof EmptyState; Skeleton: typeof Skeleton; Spinner: typeof Spinner; Pagination: typeof Pagination; Accordion: typeof Accordion; Callout: typeof Callout; Toast: typeof Toast; Toaster: typeof Toaster; MenuPanel: typeof MenuPanel; Menu: typeof Menu; ContextMenu: typeof ContextMenu; CommandPalette: typeof CommandPalette; Drawer: typeof Drawer; Modal: typeof Modal; LineChart: typeof LineChart; BarChart: typeof BarChart; BarList: typeof BarList; Sparkline: typeof Sparkline; Calendar: typeof Calendar; DatePicker: typeof DatePicker; Popover: typeof Popover; NotificationInbox: typeof NotificationInbox; Kanban: typeof Kanban; MultiSelect: typeof MultiSelect; FileDrop: typeof FileDrop; Timeline: typeof Timeline; Stepper: typeof Stepper; NumberField: typeof NumberField; CurrencyField: typeof CurrencyField; CodeInput: typeof CodeInput; PasswordField: typeof PasswordField; DateRangePicker: typeof DateRangePicker; TimePicker: typeof TimePicker; Combobox: typeof Combobox; DonutChart: typeof DonutChart; Heatmap: typeof Heatmap; Markdown: typeof Markdown; MarkdownEditor: typeof MarkdownEditor; CommentThread: typeof CommentThread; Gantt: typeof Gantt; toast: ToastFn; setStrings: typeof setStrings; setTheme: typeof setTheme; locales: typeof locales } } }

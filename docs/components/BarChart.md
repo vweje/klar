@@ -10,3 +10,5 @@ Comparing amounts across a few categories or periods: tasks per week, orders per
 The consumer provides: `data`, `series`, `aria-label`, and optionally `format`, `formatAxis`, `height` (default 240).
 
 Use `BarList` instead for a ranked list with long labels.
+
+`stacked` puts up to four series in one column per group, from `primary` at the bottom through steps of gray, with 2 px gaps and only the top rounded. Use it for parts that add up, like tasks by status.

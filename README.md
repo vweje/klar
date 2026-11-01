@@ -6,11 +6,12 @@
 
 <p align="center">
   A sharp, monochrome design system for React.<br>
-  Tokens, 57 components, and themes for Tailwind v4 and shadcn/ui.
+  Tokens, 70 components, and themes for Tailwind v4 and shadcn/ui.
 </p>
 
 <p align="center">
   <a href="https://klar.vweje.dk"><strong>Website</strong></a> ·
+  <a href="https://klar.vweje.dk/components">All components</a> ·
   <a href="https://klar.vweje.dk/examples/">Live demo</a> ·
   <a href="docs/design-principles.md">Design principles</a> ·
   <a href="docs/patterns.md">Patterns</a> ·
@@ -28,7 +29,7 @@
 
 Klar (Danish for *clear*) is black and white by design: thin borders, small radii, compact controls and bold type set in Manrope. There is no accent color - contrast does the work, and color only ever means status.
 
-- **57 React components** - forms, a custom dropdown, multi-select, file upload, a date picker, charts, a calendar with month, week and day, a kanban board, tables with right-click rows, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers, settings pages and toast notifications.
+- **70 React components** - forms with number, currency, code and password fields, a custom dropdown, multi-select, async search, file upload, date, period and time pickers, charts, a calendar with month, week and day, a kanban board, a Gantt plan, comments with @mentions, sortable and selectable tables, tables with right-click rows, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers, settings pages and toast notifications.
 - **Design tokens** as CSS variables, with light and dark mode out of the box.
 - **Drop-in themes** for Tailwind v4 and shadcn/ui, so existing projects can adopt the look without a rewrite.
 - **Zero dependencies** besides React 18+. Works with the Next.js App Router, Vite, or a plain `<script>` tag.
@@ -86,10 +87,10 @@ The package ships with `"use client"`, so components without function props (`Ca
 | | |
 | --- | --- |
 | **Layout** | `Sidebar` `Topbar` `NavList` `SettingsSection` `Tabs` `Pagination` |
-| **Inputs** | `TextField` `Textarea` `Dropdown` `MultiSelect` `FileDrop` `Select` `SearchField` `Checkbox` `RadioGroup` `Switch` `Slider` `SegmentedControl` |
-| **Charts** | `LineChart` `BarChart` `BarList` `Sparkline` |
-| **Dates** | `Calendar` `DatePicker` |
-| **Work** | `Kanban` `Timeline` `Stepper` |
+| **Inputs** | `TextField` `Textarea` `NumberField` `CurrencyField` `PasswordField` `CodeInput` `Dropdown` `MultiSelect` `Combobox` `FileDrop` `Select` `SearchField` `Checkbox` `RadioGroup` `Switch` `Slider` `SegmentedControl` |
+| **Charts** | `LineChart` `BarChart` `BarList` `Sparkline` `DonutChart` `Heatmap` |
+| **Dates** | `Calendar` `DatePicker` `DateRangePicker` `TimePicker` |
+| **Work** | `Kanban` `Gantt` `Timeline` `Stepper` `CommentThread` `MarkdownEditor` `Markdown` |
 | **Data display** | `Table` `List` `ListRow` `Card` `Stat` `Badge` `Avatar` `AvatarGroup` `Accordion` `Tooltip` `Kbd` `Icon` |
 | **Actions and menus** | `Button` `Menu` `MenuPanel` `ContextMenu` `CommandPalette` |
 | **Overlays** | `Dialog` `Modal` `Drawer` `Popover` `NotificationInbox` |
@@ -205,6 +206,10 @@ toast({
   ]}
 />
 ```
+
+## Redesigning an existing app
+
+See [docs/redesign.md](docs/redesign.md) for a step-by-step way to move a dashboard onto Klar - starting with tokens, then the shell, then one page at a time.
 
 ## Theming
 

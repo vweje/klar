@@ -31,6 +31,12 @@ Recipes for common screens and situations - which components to use and how to c
 - Offer Month, Week and Day. Right-click on a day or a time creates things right there; right-click on an event gives its actions.
 - Give the page its own URL (`#calendar`) and open on today.
 
+## Tables
+
+- Make the columns people compare sortable. Right-align numbers and keep IDs in `mono`.
+- When people act on several rows at once, add `selectable` and `bulkActions`. The bar appears only while something is selected, and destructive bulk actions get an Undo toast.
+- Tables with many columns get `columnToggle`. Long lists stay in one virtualized table instead of pages.
+
 ## Boards
 
 - Offer a board next to the list, never instead of it: a `SegmentedControl` (List, Board) above the data switches between `Table` and `Kanban`, with the same filters.
@@ -46,6 +52,15 @@ Recipes for common screens and situations - which components to use and how to c
 
 - `FileDrop` inside the form it belongs to, with the allowed types and size in its hint. Show progress per file and keep the form usable while files upload.
 
+## Planning
+
+- Calendar for days and times, `Gantt` for weeks and months. Both open on today and link back to the task.
+
+## Comments
+
+- A `CommentThread` under the thing being discussed, with a `Timeline` of other changes below it. Mentioned people are notified through the `NotificationInbox`.
+- Notes that belong to the item itself go in a `MarkdownEditor`, not in comments.
+
 ## Guides
 
 - Creating something that needs three to five decisions: a `Modal` with `size="md"`, a `Stepper` at the top and Back/Next at the bottom right. The last step is a review with a `List` and the real action ("Create project").
@@ -55,7 +70,8 @@ Recipes for common screens and situations - which components to use and how to c
 
 - One column, max about 480 px wide; fields separated by `space-4`, groups by `space-8` with an `h3` above.
 - Label above the field, always. Help text below (`hint`); an error replaces the help text (`error`).
-- Dates: `DatePicker`, never a free text field. Several values from a list: `MultiSelect`.
+- Dates: `DatePicker`, periods: `DateRangePicker`, times: `TimePicker` - never free text fields. Several values from a list: `MultiSelect`. One value from a list too big to load: `Combobox`.
+- Numbers with a unit: `NumberField`; money: `CurrencyField` (Danish kroner as 1.234,50 kr.); codes from an app or text message: `CodeInput`; new passwords: `PasswordField` with `strength`.
 - Choices: `Dropdown` for five or more options (with `search` from about eight), `RadioGroup` or `SegmentedControl` for 2-4 visible ones, `Checkbox` for yes/no that is saved, `Switch` for yes/no that takes effect immediately.
 - Buttons at the bottom right: secondary "Cancel" first, primary "Save" last. On mobile: `lg` and `block`.
 - Validate on blur or on submit - never while the user is typing for the first time.

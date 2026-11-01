@@ -1,7 +1,7 @@
 {
   "name": "klar",
   "version": "1.0.0",
-  "description": "A sharp, monochrome design system for React - tokens, 57 components and themes for Tailwind v4 and shadcn/ui.",
+  "description": "A sharp, monochrome design system for React - tokens, 70 components and themes for Tailwind v4 and shadcn/ui.",
   "license": "MIT",
   "author": "Viggo Weje",
   "homepage": "https://klar.vweje.dk",

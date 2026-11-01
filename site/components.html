@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Components · Klar</title>
+  <meta name="description" content="Every Klar component, live: inputs, dates, charts, tables, boards, overlays and feedback.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2309090b'/%3E%3Cpath d='M11 8v16M21 8l-8 8 8 8' fill='none' stroke='%23fafafa' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>
+    // Apply the saved theme before first paint so the page never flashes the wrong one.
+    try { var saved = localStorage.getItem('klar-theme'); if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved); } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="../dist/klar.css">
+  <style>
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    .top { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--border); background: var(--canvas); }
+    .top__inner { display: flex; align-items: center; gap: var(--space-5); max-width: 1240px; height: 56px; margin: 0 auto; padding: 0 var(--space-6); }
+    .logo { display: flex; align-items: center; gap: 10px; margin-right: auto; font-size: 15px; font-weight: 800; letter-spacing: -0.02em; text-decoration: none; color: var(--text); }
+    .logo b { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); background: var(--primary); color: var(--on-primary); font-size: 12px; }
+    .top a:not(.logo) { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-decoration: none; transition: color var(--duration-fast) var(--ease-out); }
+    .top a:not(.logo):hover { color: var(--text); }
+    .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--space-12); max-width: 1240px; margin: 0 auto; padding: var(--space-8) var(--space-6) 96px; }
+    .toc { position: sticky; top: 88px; align-self: start; max-height: calc(100vh - 112px); overflow-y: auto; }
+    .intro h1 { margin: 0; }
+    .intro p { max-width: 560px; margin: var(--space-2) 0 0; color: var(--text-secondary); }
+    .group { margin: var(--space-16) 0 0; }
+    .comp { padding: var(--space-8) 0; border-top: 1px solid var(--border); scroll-margin-top: 72px; }
+    .comp__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); }
+    .comp__head h3 { margin: 0; }
+    .comp__head a { flex: none; font-size: 13px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+    .comp__head a:hover { color: var(--text); }
+    .comp > p { max-width: 640px; margin: 4px 0 0; color: var(--text-secondary); }
+    .stage { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-4); padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+    .stage--canvas { background: var(--canvas); }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+    .row--top { align-items: flex-start; }
+    .narrow { max-width: 360px; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-4); }
+    .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: var(--space-2); }
+    .icons span { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: var(--space-3) var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-md); font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+    .icons svg { color: var(--text); }
+    .shell { height: 300px; display: flex; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-md); }
+    .shell .k-sidebar { height: 100%; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .toc { display: none; } }
+    @media (max-width: 560px) { .layout, .top__inner { padding-left: var(--space-4); padding-right: var(--space-4); } .stage { padding: var(--space-4); } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="top__inner">
+      <a class="logo" href="/"><b>K</b>Klar</a>
+      <a href="../examples/">Demo</a>
+      <a href="https://github.com/vweje/klar">GitHub</a>
+      <span id="theme"></span>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="toc" id="toc" aria-label="Components"></nav>
+    <main id="main"></main>
+  </div>
+  <div id="toaster"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" integrity="sha512-QVs8Lo43F9lSuBykadDb0oSXDL/BbZ588urWVCRwSIoewQv/Ewg1f84mK3U790bZ0FfhFa1YSQUmIhG+pIRKeg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" integrity="sha512-6a1107rTlA4gYpgHAqbwLAtxmWipBdJFcq8y5S/aTge3Bp+VAklABm2LO+Kg51vOWR9JMZq1Ovjl5tpluNpTeQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="../dist/klar.umd.js"></script>
+  <script>
+    var K = window.Klar, h = React.createElement, useState = React.useState;
+    var DOCS = 'https://github.com/vweje/klar/blob/main/docs/components/';
+    var people = ['Ava Thompson', 'Noah Bennett', 'Mia Larsen', 'Leo Fischer', 'Sara Holm', 'Emil Berg'];
+    var today = new Date();
+    function iso(days) { var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (days || 0)); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    var companies = ['Acme', 'Northwind', 'Contoso', 'Globex', 'Initech', 'Umbrella', 'Hooli', 'Stark Industries', 'Wayne Enterprises', 'Soylent', 'Vandelay', 'Pied Piper', 'Wonka', 'Cyberdyne', 'Tyrell', 'Gringotts', 'Oceanic', 'Aperture', 'Black Mesa', 'Monarch'];
+    function searchCompanies(q) {
+      return new Promise(function (done) { setTimeout(function () {
+        done(companies.filter(function (c) { return c.toLowerCase().indexOf(q.toLowerCase()) >= 0; }).slice(0, 8).map(function (c) { return { value: c, label: c, description: Math.round(c.length * 37) + ' employees', icon: 'folder' }; }));
+      }, 400); });
+    }
+    var tasks = [
+      { id: 'KL-142', name: 'Redesign the landing page', owner: 'Ava Thompson', status: 'In progress', hours: 12 },
+      { id: 'KL-139', name: 'Update pricing page', owner: 'Noah Bennett', status: 'Done', hours: 4 },
+      { id: 'KL-131', name: 'Fix sign-in redirect', owner: 'Mia Larsen', status: 'Overdue', hours: 7 },
+      { id: 'KL-128', name: 'Write onboarding emails', owner: 'Leo Fischer', status: 'Due soon', hours: 3 },
+      { id: 'KL-124', name: 'Audit color contrast', owner: 'Ava Thompson', status: 'In progress', hours: 9 }
+    ];
+    var tone = { 'In progress': 'neutral', 'Done': 'success', 'Overdue': 'danger', 'Due soon': 'warning' };
+    var menuItems = [
+      { label: 'Rename', icon: 'edit', shortcut: 'F2', onSelect: function () { K.toast('Rename'); } },
+      { label: 'Status', icon: 'circle-check', items: [{ label: 'In progress', checked: true }, { label: 'Done', checked: false }] },
+      { separator: true },
+      { label: 'Delete', icon: 'trash', danger: true, onSelect: function () { K.toast('Deleted'); } }
+    ];
+    var series = [12, 18, 15, 22, 19, 27, 24, 31, 28, 35, 33, 41];
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // Small stateful demos
+    function Toggle(p) { var s = useState(p.initial); return p.render(s[0], s[1]); }
+
+    function OverlayDemo() {
+      var dialog = useState(false), modal = useState(false), md = useState(false), drawer = useState(false), palette = useState(false);
+      return h(React.Fragment, null,
+        h('div', { className: 'row' },
+          h(K.Button, { variant: 'secondary', icon: 'trash', onClick: function () { dialog[1](true); } }, 'Dialog'),
+          h(K.Button, { variant: 'secondary', icon: 'edit', onClick: function () { modal[1](true); } }, 'Modal'),
+          h(K.Button, { variant: 'secondary', icon: 'plus', onClick: function () { md[1](true); } }, 'Modal, medium'),
+          h(K.Button, { variant: 'secondary', icon: 'arrow-right', onClick: function () { drawer[1](true); } }, 'Drawer'),
+          h(K.Button, { variant: 'secondary', icon: 'search', onClick: function () { palette[1](true); } }, 'Command palette')),
+        h(K.Dialog, { overlay: true, open: dialog[0], onClose: function () { dialog[1](false); }, title: 'Delete project?', message: '"Website relaunch" and its 35 tasks will be permanently deleted.', actions: [
+          { label: 'Cancel', variant: 'secondary', onClick: function () { dialog[1](false); } },
+          { label: 'Delete project', variant: 'danger', onClick: function () { dialog[1](false); K.toast('Project deleted'); } }] }),
+        h(K.Modal, { open: modal[0], onClose: function () { modal[1](false); }, title: 'Edit task', description: 'KL-142 · Website',
+          footer: h(React.Fragment, null, h(K.Button, { variant: 'secondary', onClick: function () { modal[1](false); } }, 'Cancel'), h(K.Button, { icon: 'check', onClick: function () { modal[1](false); } }, 'Save changes')) },
+          h(K.TextField, { label: 'Name', defaultValue: 'Redesign the landing page' }), h(K.MarkdownEditor, { label: 'Notes', people: people, defaultValue: 'Keep the **old hero** until @Mia Larsen approves.' })),
+        h(K.Modal, { size: 'md', open: md[0], onClose: function () { md[1](false); }, title: 'New project', footer: h(K.Button, { icon: 'check', onClick: function () { md[1](false); } }, 'Create project') },
+          h(K.Stepper, { current: 0, steps: [{ label: 'Details' }, { label: 'Team' }, { label: 'Review' }] }), h(K.TextField, { label: 'Name', autoFocus: true })),
+        h(K.Drawer, { overlay: true, open: drawer[0], onClose: function () { drawer[1](false); }, title: 'Details', description: 'For when the list behind must stay visible.' }, h(K.TextField, { label: 'Name' })),
+        h(K.CommandPalette, { overlay: true, autoFocus: true, open: palette[0], onClose: function () { palette[1](false); }, items: [
+          { group: 'Go to', label: 'Overview', icon: 'home' }, { group: 'Go to', label: 'Calendar', icon: 'calendar' }, { group: 'Actions', label: 'New task', icon: 'plus', shortcut: 'C' }] }));
+    }
+
+    function UploadDemo() {
+      var files = useState([]);
+      function add(list) {
+        var added = list.map(function (f, i) { return { id: Date.now() + '-' + i, name: f.name, size: f.size, progress: 0 }; }), progress = {};
+        added.forEach(function (a) { progress[a.id] = 0; });
+        files[1](function (cur) { return cur.concat(added); });
+        var t = setInterval(function () {
+          var done = true;
+          added.forEach(function (a) { progress[a.id] = Math.min(1, progress[a.id] + 0.12); if (progress[a.id] < 1) done = false; });
+          files[1](function (cur) { return cur.map(function (f) { return progress[f.id] != null ? Object.assign({}, f, { progress: progress[f.id] }) : f; }); });
+          if (done) clearInterval(t);
+        }, 150);
+      }
+      return h(K.FileDrop, { label: 'Attachments', hint: 'PDF or images up to 10 MB', accept: '.pdf,image/*', maxSize: 10485760, multiple: true, files: files[0], onFiles: add,
+        onRemove: function (id) { files[1](files[0].filter(function (f) { return f.id !== id; })); } });
+    }
+
+    function BoardDemo() {
+      var cols = useState([
+        { id: 'todo', title: 'To do', items: [{ id: 'a', title: 'Write the brief' }, { id: 'b', title: 'Collect references' }] },
+        { id: 'doing', title: 'In progress', items: [{ id: 'c', title: 'Sketch the layout' }] },
+        { id: 'done', title: 'Done', items: [{ id: 'd', title: 'Kick-off meeting' }] }]);
+      function move(id, to, index) {
+        var next = cols[0].map(function (c) { return Object.assign({}, c, { items: c.items.slice() }); }), card;
+        next.forEach(function (c) { var i = c.items.findIndex(function (x) { return x.id === id; }); if (i >= 0) card = c.items.splice(i, 1)[0]; });
+        next.filter(function (c) { return c.id === to; })[0].items.splice(index, 0, card);
+        cols[1](next);
+      }
+      return h(K.Kanban, { columns: cols[0], onMove: move, onCardClick: function (c) { K.toast('Opened "' + c.title + '"'); } });
+    }
+
+    function CommentsDemo() {
+      var list = useState([{ id: 1, author: 'Mia Larsen', time: '10 min ago', body: 'Can we keep the old hero until it is **approved**?' }, { id: 2, author: 'Noah Bennett', time: '4 min ago', body: '@Mia Larsen yes, I will swap it on Friday.' }]);
+      return h(K.CommentThread, { comments: list[0], people: people, currentUser: 'Ava Thompson',
+        onSubmit: function (body) { list[1](list[0].concat([{ id: Date.now(), author: 'Ava Thompson', time: 'Just now', body: body }])); } });
+    }
+
+    var heat = (function () { var d = {}; for (var i = 0; i < 371; i++) { var v = Math.max(0, Math.round(4 * Math.sin(i * 0.31) + 3 * Math.sin(i * 0.07) + (i % 7 > 4 ? -3 : 1))); d[iso(-i)] = v; } return d; })();
+    var events = [
+      { id: 'e1', date: iso(0), time: '09:00', end: '09:15', title: 'Stand-up' },
+      { id: 'e2', date: iso(1), time: '10:00', end: '11:00', title: 'Design review' },
+      { id: 'e3', date: iso(1), time: '10:30', end: '11:00', title: '1:1' },
+      { id: 'e4', date: iso(3), title: 'Launch', tone: 'success' },
+      { id: 'e5', date: iso(-2), time: '14:00', end: '15:30', title: 'Workshop' }];
+
+    var GROUPS = [
+      { name: 'Layout', items: [
+        { name: 'Sidebar', doc: 'Sidebar', desc: 'The app\'s main navigation, 300 px wide, with sections and counts.', demo: function () { return h('div', { className: 'shell' }, h(K.Sidebar, { defaultValue: 'home', items: [{ id: 'home', label: 'Overview', icon: 'home' }, { id: 'inbox', label: 'Inbox', icon: 'inbox', count: 4 }, { section: 'Projects' }, { id: 'p', label: 'Website', icon: 'folder', count: 12 }] })); } },
+        { name: 'Topbar', doc: 'Topbar', desc: 'Breadcrumb, page title and the page\'s actions.', demo: function () { return h('div', { style: { border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' } }, h(K.Topbar, { breadcrumb: ['Workspace'], title: 'Overview', actions: h(K.Button, { size: 'sm', icon: 'plus' }, 'New task') })); } },
+        { name: 'NavList', doc: 'NavList', desc: 'Sub-navigation inside a page, such as settings, with category headings.', demo: function () { return h('div', { className: 'narrow' }, h(K.NavList, { defaultValue: 'profile', items: [{ section: 'Account' }, { id: 'profile', label: 'Profile', icon: 'person' }, { id: 'security', label: 'Security', icon: 'lock' }, { section: 'Preferences' }, { id: 'appearance', label: 'Appearance', icon: 'settings' }] })); } },
+        { name: 'SettingsSection', doc: 'SettingsSection', desc: 'One settings topic: what it is on the left, the controls on the right.', demo: function () { return h('div', null, h(K.SettingsSection, { title: 'Theme', description: 'System follows your operating system.' }, h(K.SegmentedControl, { options: ['Light', 'Dark', 'System'], defaultValue: 'System' })), h(K.SettingsSection, { title: 'Email', description: 'Used for sign-in.' }, h(K.TextField, { 'aria-label': 'Email', defaultValue: 'ava@example.com' }))); } },
+        { name: 'Tabs', doc: 'Tabs', desc: 'Switch between views of the same data.', demo: function () { return h(K.Tabs, { items: [{ id: 'a', label: 'All', count: 24 }, { id: 'o', label: 'Open', count: 9 }, { id: 'd', label: 'Done', count: 15 }] }); } },
+        { name: 'Pagination', doc: 'Pagination', desc: 'Pages of a long list.', demo: function () { return h(K.Pagination, { pageCount: 12, defaultPage: 4 }); } }
+      ] },
+      { name: 'Inputs', items: [
+        { name: 'Button', doc: 'Button', desc: 'One primary per view; secondary, ghost and danger for the rest.', demo: function () { return h('div', { className: 'row' }, h(K.Button, { icon: 'plus' }, 'Create project'), h(K.Button, { variant: 'secondary', icon: 'upload' }, 'Export'), h(K.Button, { variant: 'ghost' }, 'Cancel'), h(K.Button, { variant: 'danger', icon: 'trash' }, 'Delete'), h(K.Button, { variant: 'secondary', shortcut: 'C', icon: 'plus' }, 'New task')); } },
+        { name: 'TextField', doc: 'TextField', desc: 'Label above, hint below, the error replaces the hint.', demo: function () { return h('div', { className: 'grid2' }, h(K.TextField, { label: 'Email address', placeholder: 'you@example.com', hint: 'We never share it.' }), h(K.TextField, { label: 'Workspace URL', defaultValue: 'my workspace', error: 'Use only lowercase letters, numbers and dashes.' })); } },
+        { name: 'Textarea', doc: 'Textarea', desc: 'Longer text, with an optional character count.', demo: function () { return h('div', { className: 'narrow' }, h(K.Textarea, { label: 'Bio', rows: 3, maxLength: 160 })); } },
+        { name: 'Dropdown', doc: 'Dropdown', desc: 'The custom select: icons, descriptions, groups and search.', demo: function () { return h('div', { className: 'narrow' }, h(K.Dropdown, { label: 'Owner', search: true, placeholder: 'Choose a person', options: [{ section: 'Design' }, { value: 'ava', label: 'Ava Thompson', description: 'Product designer' }, { value: 'mia', label: 'Mia Larsen', description: 'Brand' }, { section: 'Engineering' }, { value: 'noah', label: 'Noah Bennett', description: 'Frontend' }, { value: 'leo', label: 'Leo Fischer', description: 'Backend' }] })); } },
+        { name: 'MultiSelect', doc: 'MultiSelect', desc: 'Several values as tags, with search.', demo: function () { return h('div', { className: 'narrow' }, h(K.MultiSelect, { label: 'Labels', defaultValue: ['Design'], options: ['Design', 'Frontend', 'Backend', 'Copy', 'Bug', 'Research'] })); } },
+        { name: 'Combobox', doc: 'Combobox', desc: 'Search a large or remote list as you type. Try "a".', demo: function () { return h('div', { className: 'narrow' }, h(K.Combobox, { label: 'Client', loadOptions: searchCompanies, placeholder: 'Search companies' })); } },
+        { name: 'Select', doc: 'Select', desc: 'The native select, for when the phone\'s own picker is better.', demo: function () { return h('div', { className: 'narrow' }, h(K.Select, { label: 'Role', defaultValue: 'Member', options: ['Owner', 'Admin', 'Member'] })); } },
+        { name: 'SearchField', doc: 'SearchField', desc: 'Search with a shortcut hint.', demo: function () { return h('div', { className: 'narrow' }, h(K.SearchField, { placeholder: 'Search projects', shortcut: '/' })); } },
+        { name: 'Checkbox', doc: 'Checkbox', desc: 'Yes or no that is saved; a dash when some of a group is checked.', demo: function () { return h('div', { className: 'row row--top', style: { gap: 24 } }, h(K.Checkbox, { label: 'Email notifications', description: 'A summary every morning.', defaultChecked: true }), h(K.Checkbox, { label: 'Some selected', indeterminate: true })); } },
+        { name: 'RadioGroup', doc: 'RadioGroup', desc: 'Two to four visible choices, as a list or cards.', demo: function () { return h(K.RadioGroup, { variant: 'cards', defaultValue: 'pro', options: [{ value: 'free', label: 'Free', description: 'One person' }, { value: 'pro', label: 'Pro', description: 'Unlimited projects' }] }); } },
+        { name: 'Switch', doc: 'Switch', desc: 'Yes or no that applies right away.', demo: function () { return h('div', { className: 'narrow' }, h(K.Switch, { label: 'Auto-save', defaultChecked: true })); } },
+        { name: 'Slider', doc: 'Slider', desc: 'A number in a known range, with the value next to it.', demo: function () { return h('div', { className: 'narrow' }, h(K.Slider, { label: 'Volume', defaultValue: 64, format: function (v) { return v + '%'; } })); } },
+        { name: 'SegmentedControl', doc: 'SegmentedControl', desc: 'Two to four options that switch a view.', demo: function () { return h(K.SegmentedControl, { options: ['Day', 'Week', 'Month'], defaultValue: 'Week' }); } },
+        { name: 'NumberField', doc: 'NumberField', desc: 'A number with a unit, steppers and arrow keys.', demo: function () { return h('div', { className: 'narrow' }, h(K.NumberField, { label: 'Hours per week', defaultValue: 37, unit: 'h', min: 0, max: 60 })); } },
+        { name: 'CurrencyField', doc: 'CurrencyField', desc: 'An amount, written the local way. Kroner as 1.234,50 kr.', demo: function () { return h('div', { className: 'narrow' }, h(K.CurrencyField, { label: 'Monthly budget', defaultValue: 12500 })); } },
+        { name: 'CodeInput', doc: 'CodeInput', desc: 'A one-time code: one box per digit, paste fills them all.', demo: function () { return h(K.CodeInput, { label: 'Code from your authenticator app', onComplete: function (c) { K.toast.success('Code ' + c + ' entered'); } }); } },
+        { name: 'PasswordField', doc: 'PasswordField', desc: 'Show or hide the password, and a strength meter for new ones.', demo: function () { return h('div', { className: 'narrow' }, h(K.PasswordField, { label: 'New password', strength: true, defaultValue: 'klar2026' })); } },
+        { name: 'FileDrop', doc: 'FileDrop', desc: 'Drop files or browse, with progress and reasons for refused files.', demo: function () { return h(UploadDemo); } }
+      ] },
+      { name: 'Dates', items: [
+        { name: 'DatePicker', doc: 'DatePicker', desc: 'A date field with a small calendar and full keyboard support.', demo: function () { return h('div', { className: 'narrow' }, h(K.DatePicker, { label: 'Due', defaultValue: iso(3) })); } },
+        { name: 'DateRangePicker', doc: 'DateRangePicker', desc: 'A period with presets and two months side by side.', demo: function () { return h('div', { className: 'narrow' }, h(K.DateRangePicker, { label: 'Period', defaultValue: { start: iso(-29), end: iso(0) } })); } },
+        { name: 'TimePicker', doc: 'TimePicker', desc: 'A time: type "930" or pick from the list.', demo: function () { return h('div', { className: 'narrow' }, h(K.TimePicker, { label: 'Starts', defaultValue: '10:30' })); } },
+        { name: 'Calendar', doc: 'Calendar', desc: 'Month, week and day. Right-click a day, a time or an event.', demo: function () { return h(K.Calendar, { events: events, views: ['month', 'week', 'day'], dayMenu: function (date, time) { return [{ label: time ? 'New meeting at ' + time : 'New meeting', icon: 'calendar', onSelect: function () { K.toast('New meeting on ' + date + (time ? ' at ' + time : '')); } }]; }, eventMenu: function (ev) { return [{ label: 'Delete ' + ev.title, icon: 'trash', danger: true, onSelect: function () { K.toast('Deleted'); } }]; } }); } }
+      ] },
+      { name: 'Charts', items: [
+        { name: 'LineChart', doc: 'LineChart', desc: 'Change over time; the comparison is dashed.', demo: function () { return h(K.LineChart, { 'aria-label': 'Revenue', area: true, height: 220, series: [{ key: 'now', label: 'This year' }, { key: 'before', label: 'Last year' }], data: months.map(function (m, i) { return { label: m, now: series[i] * 100, before: series[i] * 80 + 300 }; }) }); } },
+        { name: 'BarChart', doc: 'BarChart', desc: 'Amounts side by side, or stacked in up to four steps of gray.', demo: function () { return h('div', { className: 'grid2' }, h(K.BarChart, { 'aria-label': 'Tasks', height: 200, series: [{ key: 'done', label: 'Done' }, { key: 'new', label: 'Created' }], data: months.slice(0, 6).map(function (m, i) { return { label: m, done: series[i], new: series[i + 2] }; }) }), h(K.BarChart, { 'aria-label': 'Tasks by status', stacked: true, height: 200, series: [{ key: 'a', label: 'Done' }, { key: 'b', label: 'In progress' }, { key: 'c', label: 'Due soon' }, { key: 'd', label: 'Overdue' }], data: months.slice(0, 6).map(function (m, i) { return { label: m, a: series[i], b: 8 + i, c: 4 + (i % 3), d: 2 + (i % 2) }; }) })); } },
+        { name: 'BarList', doc: 'BarList', desc: 'A ranked list where each row is its own bar.', demo: function () { return h(K.BarList, { items: [{ label: 'Website', value: 128 }, { label: 'Mobile app', value: 96 }, { label: 'Design system', value: 71 }] }); } },
+        { name: 'Sparkline', doc: 'Sparkline', desc: 'The shape of a trend next to a number, often inside a Stat.', demo: function () { return h('div', { className: 'grid2' }, h(K.Stat, { label: 'Revenue', value: '$48,250', delta: '+12.4%', trend: 'up', caption: 'vs. last month', chart: h(K.Sparkline, { data: series, label: 'Revenue trend' }) })); } },
+        { name: 'DonutChart', doc: 'DonutChart', desc: 'Parts of a whole in up to five steps of gray, always with the numbers.', demo: function () { return h(K.DonutChart, { 'aria-label': 'Hours by type', centerLabel: 'Hours', data: [{ label: 'Design', value: 128 }, { label: 'Engineering', value: 96 }, { label: 'Meetings', value: 41 }, { label: 'Writing', value: 23 }, { label: 'Admin', value: 12 }] }); } },
+        { name: 'Heatmap', doc: 'Heatmap', desc: 'Activity per day across a year.', demo: function () { return h(K.Heatmap, { 'aria-label': 'Tasks completed', data: heat, format: function (v) { return v + ' tasks'; } }); } }
+      ] },
+      { name: 'Data display', items: [
+        { name: 'Table', doc: 'Table', desc: 'Sort by clicking a header, select rows for bulk actions, hide columns, right-click a row.', demo: function () { return h(K.Table, { selectable: true, columnToggle: true, rowMenu: function () { return menuItems; },
+          bulkActions: function (rows) { return h(K.Button, { size: 'sm', variant: 'secondary', icon: 'check', onClick: function () { K.toast.success(rows.length + ' marked as done'); } }, 'Mark as done'); },
+          rows: tasks, columns: [{ key: 'name', label: 'Task', strong: true, sortable: true }, { key: 'owner', label: 'Owner', sortable: true }, { key: 'status', label: 'Status', sortable: true, render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } }, { key: 'hours', label: 'Hours', align: 'right', sortable: true }, { key: 'id', label: 'ID', mono: true, align: 'right' }] }); } },
+        { name: 'List', doc: 'List', desc: 'Rows of settings or items, with ListRow.', demo: function () { return h('div', { className: 'narrow' }, h(K.List, { header: 'Settings' }, h(K.ListRow, { icon: 'person', title: 'Profile', subtitle: 'Name and photo', accessory: 'chevron', onClick: function () {} }), h(K.ListRow, { icon: 'bell', title: 'Notifications', value: 'Daily', accessory: 'chevron', onClick: function () {} }))); } },
+        { name: 'Card', doc: 'Card', desc: 'A group with an eyebrow, a title, an action and a footer.', demo: function () { return h('div', { className: 'narrow' }, h(K.Card, { eyebrow: 'This week', title: 'Upcoming tasks', footer: h(K.Button, { size: 'sm', variant: 'secondary' }, 'View all') }, '3 of 8 done.')); } },
+        { name: 'Stat', doc: 'Stat', desc: 'A key number with its change.', demo: function () { return h('div', { className: 'grid2' }, h(K.Stat, { label: 'Active users', icon: 'person', value: '2,481', delta: '+8.1%', trend: 'up', caption: 'this week' })); } },
+        { name: 'Badge', doc: 'Badge', desc: 'A short label; colour only with a word.', demo: function () { return h('div', { className: 'row' }, h(K.Badge, null, 'Draft'), h(K.Badge, { tone: 'outline' }, 'Internal'), h(K.Badge, { tone: 'solid' }, 'New'), h(K.Badge, { tone: 'success' }, 'Paid'), h(K.Badge, { tone: 'warning' }, 'Due soon'), h(K.Badge, { tone: 'danger' }, 'Overdue')); } },
+        { name: 'Avatar', doc: 'Avatar', desc: 'Initials or a photo, alone or as a group.', demo: function () { return h('div', { className: 'row', style: { gap: 16 } }, h(K.Avatar, { name: 'Ava Thompson', status: 'online' }), h(K.Avatar, { name: 'Noah Bennett', size: 'lg' }), h(K.AvatarGroup, { names: people, max: 4 })); } },
+        { name: 'Accordion', doc: 'Accordion', desc: 'Questions and details that open in place.', demo: function () { return h(K.Accordion, { defaultOpen: ['a'], items: [{ id: 'a', title: 'Does Klar work with Next.js?', content: 'Yes, with the App Router.' }, { id: 'b', title: 'Is there an accent colour?', content: 'No. Colour only means status.' }] }); } },
+        { name: 'Tooltip', doc: 'Tooltip', desc: 'A short explanation on hover or focus.', demo: function () { return h(K.Tooltip, { content: 'Search', shortcut: '⌘K' }, h(K.Button, { variant: 'ghost', icon: 'search', 'aria-label': 'Search' })); } },
+        { name: 'Kbd', doc: 'Kbd', desc: 'A key on the keyboard.', demo: function () { return h('div', { className: 'row' }, 'Press', h(K.Kbd, null, '⌘'), h(K.Kbd, null, 'K')); } },
+        { name: 'Icon', doc: 'Icon', desc: 'Line icons on a 24 px grid, always monochrome.', demo: function () { return h('div', { className: 'icons' }, (K.Icon.names || []).map(function (n) { return h('span', { key: n }, h(K.Icon, { name: n, size: 20 }), n); })); } },
+        { name: 'Timeline', doc: 'Timeline', desc: 'What happened, in order.', demo: function () { return h(K.Timeline, { items: [{ avatar: 'Mia Larsen', title: h(React.Fragment, null, h('strong', null, 'Mia Larsen'), ' commented'), description: 'Looks good to me.', time: '10 min ago' }, { icon: 'circle-check', title: 'Status set to Done', time: 'Yesterday' }] }); } },
+        { name: 'Markdown', doc: 'Markdown', desc: 'Safe markdown with @mentions, rendered as elements.', demo: function () { return h(K.Markdown, { people: people }, '**Decision:** keep the old hero for now.\n\n- Ask @Mia Larsen\n- Ship on _Friday_'); } }
+      ] },
+      { name: 'Work', items: [
+        { name: 'Kanban', doc: 'Kanban', desc: 'Drag cards between columns - or hold on touch, or press Alt and an arrow key.', demo: function () { return h(BoardDemo); } },
+        { name: 'Gantt', doc: 'Gantt', desc: 'Projects and tasks over time, with progress and a today line.', demo: function () { return h(K.Gantt, { 'aria-label': 'Plan', items: [
+          { id: 1, group: 'Website', label: 'Research', start: iso(-14), end: iso(-4), progress: 1 }, { id: 2, group: 'Website', label: 'Design', start: iso(-6), end: iso(8), progress: 0.5 },
+          { id: 3, group: 'Website', label: 'Launch', start: iso(12), milestone: true }, { id: 4, group: 'Mobile app', label: 'Prototype', start: iso(-2), end: iso(16), progress: 0.2 }] }); } },
+        { name: 'Stepper', doc: 'Stepper', desc: 'Progress through a short guide.', demo: function () { return h(Toggle, { initial: 1, render: function (v, set) { return h(K.Stepper, { current: v, onStepClick: set, steps: [{ label: 'Details', description: 'Name and goal' }, { label: 'Team', description: 'Who works on it' }, { label: 'Review', description: 'Check and create' }] }); } }); } },
+        { name: 'MarkdownEditor', doc: 'MarkdownEditor', desc: 'Notes with bold, lists and links, a preview and @mentions.', demo: function () { return h(K.MarkdownEditor, { label: 'Notes', people: people, rows: 4, defaultValue: 'Type @ to mention someone.' }); } },
+        { name: 'CommentThread', doc: 'CommentThread', desc: 'Comments with @mentions. Send with Ctrl or ⌘ and Enter.', demo: function () { return h(CommentsDemo); } }
+      ] },
+      { name: 'Menus and overlays', items: [
+        { name: 'Menu', doc: 'Menu', desc: 'A dropdown of actions with shortcuts, checkmarks and submenus.', demo: function () { return h('div', { className: 'row' }, h(K.Menu, { items: menuItems, trigger: h(K.Button, { variant: 'secondary', iconRight: 'chevron-down' }, 'Options') })); } },
+        { name: 'ContextMenu', doc: 'ContextMenu', desc: 'Right-click a card or file for its menu.', demo: function () { return h(K.ContextMenu, { items: menuItems }, h('div', { style: { padding: 32, border: '1px dashed var(--border-strong)', borderRadius: 8, textAlign: 'center', color: 'var(--text-secondary)' } }, 'Right-click here')); } },
+        { name: 'Popover', doc: 'Popover', desc: 'A small panel that belongs to a button.', demo: function () { return h(K.Popover, { trigger: h(K.Button, { variant: 'secondary', icon: 'filter' }, 'Filters') }, function (close) { return h('div', { style: { padding: 16, display: 'flex', flexDirection: 'column', gap: 12 } }, h(K.Checkbox, { label: 'Only mine', defaultChecked: true }), h(K.Checkbox, { label: 'Hide done' }), h(K.Button, { size: 'sm', onClick: close }, 'Apply')); }); } },
+        { name: 'NotificationInbox', doc: 'NotificationInbox', desc: 'The bell in the topbar and what is behind it.', demo: function () { return h(Toggle, { initial: [{ id: 'a', avatar: 'Mia Larsen', title: 'Mia commented on your task', time: '5 min ago' }, { id: 'b', icon: 'chart', title: 'Your weekly summary is ready', time: 'Monday', read: true }], render: function (v, set) { return h('div', { className: 'row' }, h(K.NotificationInbox, { items: v, onRead: function (id) { set(v.map(function (n) { return n.id === id ? Object.assign({}, n, { read: true }) : n; })); }, onReadAll: function () { set(v.map(function (n) { return Object.assign({}, n, { read: true }); })); } })); } }); } },
+        { name: 'Dialog, Modal, Drawer and CommandPalette', doc: 'Modal', desc: 'Overlays take focus, keep Tab inside and give focus back when they close.', demo: function () { return h(OverlayDemo); } }
+      ] },
+      { name: 'Feedback', items: [
+        { name: 'Toast', doc: 'Toast', desc: 'A short confirmation in the corner, with Undo when it makes sense.', demo: function () { return h('div', { className: 'row' }, h(K.Button, { variant: 'secondary', onClick: function () { K.toast.success({ title: 'Task created', description: '"Redesign the landing page" was added.' }); } }, 'Success'), h(K.Button, { variant: 'secondary', onClick: function () { K.toast({ title: 'Project archived', action: h(K.Button, { size: 'sm', variant: 'secondary' }, 'Undo'), duration: 7000 }); } }, 'With undo')); } },
+        { name: 'Callout', doc: 'Callout', desc: 'A message that stays on the page.', demo: function () { return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, h(K.Callout, { tone: 'info', title: 'Follows your system' }, 'Klar uses the system theme until you pick one.'), h(K.Callout, { tone: 'warning', title: 'Your trial ends in 3 days' })); } },
+        { name: 'ProgressBar', doc: 'ProgressBar', desc: 'How far something has come.', demo: function () { return h(K.ProgressBar, { value: 0.68, label: 'Progress' }); } },
+        { name: 'Skeleton', doc: 'Skeleton', desc: 'The shape of content that is loading.', demo: function () { return h('div', { className: 'row', style: { gap: 12 } }, h(K.Skeleton, { circle: true, width: 36, height: 36 }), h('div', { style: { flex: 1 } }, h(K.Skeleton, { lines: 2 }))); } },
+        { name: 'Spinner', doc: 'Spinner', desc: 'Work in progress inside the button that started it.', demo: function () { return h(K.Spinner, { label: 'Saving' }); } },
+        { name: 'EmptyState', doc: 'EmptyState', desc: 'Why a page is empty, and the action that fills it.', demo: function () { return h(K.EmptyState, { icon: 'folder', title: 'No projects yet', description: 'Create your first project to start tracking tasks.', action: h(K.Button, { icon: 'plus' }, 'Create project') }); } }
+      ] }
+    ];
+
+    var count = GROUPS.reduce(function (n, g) { return n + g.items.length; }, 0);
+    function slug(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
+
+    function Page() {
+      return h(React.Fragment, null,
+        h('div', { className: 'intro' },
+          h('h1', { className: 'k-h1' }, 'Components'),
+          h('p', { className: 'k-body-lg' }, 'Every Klar component, live. Click, type, drag and right-click. Each one links to its guidelines.')),
+        GROUPS.map(function (g) {
+          return h('section', { key: g.name, className: 'group', id: slug(g.name) },
+            h('h2', { className: 'k-overline', style: { color: 'var(--text-secondary)', margin: '0 0 var(--space-4)' } }, g.name),
+            g.items.map(function (c) {
+              return h('article', { key: c.name, className: 'comp', id: slug(c.name) },
+                h('div', { className: 'comp__head' }, h('h3', { className: 'k-h3' }, c.name), h('a', { href: DOCS + c.doc + '.md' }, 'Docs →')),
+                h('p', null, c.desc),
+                h('div', { className: 'stage' }, c.demo()));
+            }));
+        }));
+    }
+
+    function Toc() {
+      var items = [];
+      GROUPS.forEach(function (g) { items.push({ section: g.name }); g.items.forEach(function (c) { items.push({ id: slug(c.name), label: c.name }); }); });
+      return h(K.NavList, { 'aria-label': 'Components', items: items, defaultValue: '', onChange: function (id) { var el = document.getElementById(id); if (el) el.scrollIntoView(); history.replaceState(null, '', '#' + id); } });
+    }
+
+    function Theme() {
+      var cur = useState(function () { try { return localStorage.getItem('klar-theme') || 'system'; } catch (e) { return 'system'; } });
+      return h(K.SegmentedControl, { 'aria-label': 'Theme', value: cur[0], options: [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }],
+        onChange: function (v) { cur[1](v); K.setTheme(v); try { if (v === 'system') localStorage.removeItem('klar-theme'); else localStorage.setItem('klar-theme', v); } catch (e) {} } });
+    }
+
+    ReactDOM.createRoot(document.getElementById('main')).render(h(Page));
+    ReactDOM.createRoot(document.getElementById('toc')).render(h(Toc));
+    ReactDOM.createRoot(document.getElementById('theme')).render(h(Theme));
+    ReactDOM.createRoot(document.getElementById('toaster')).render(h(K.Toaster));
+    document.title = 'Components · Klar';
+    window.__klarComponentCount = count;
+  </script>
+</body>
+</html>

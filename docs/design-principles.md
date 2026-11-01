@@ -47,7 +47,7 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 
 ## Charts
 
-- Monochrome like everything else: the series that matters in `primary`, at most one comparison in `border-strong` (dashed when it is a line). Color in a chart only ever means status, and then with a word.
+- Monochrome like everything else: the series that matters in `primary`, at most one comparison in `border-strong` (dashed when it is a line). Parts of a whole - stacked bars and donuts - may use up to four or five steps of gray, always with a legend that has the numbers. Color in a chart only ever means status, and then with a word.
 - Thin marks: 2 px lines, columns at most 24 px with 4 px rounded tops, 2 px between neighbours. Gridlines are 1 px `border` hairlines; axis text is 11 px `text-muted`.
 - One y-axis. A legend when there are two series, none for one. Values in tooltips, never on every point.
 - Every chart is interactive (crosshair or highlighted column with a tooltip) and has a hidden table for screen readers.
@@ -76,6 +76,8 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 
 ## Interaction and states
 
+- Overlays (Dialog, Modal, Drawer, CommandPalette) move focus inside when they open, keep Tab inside, and return focus to what opened them when they close. Esc closes the top-most layer only.
+
 - Focus: 2 px solid `focus-ring` (same as `text`) with a 2 px offset - black in light, white in dark.
 - Hover: rows, ghost buttons and menu items get `fill`; primary becomes `primary-hover`; inputs get a darker border.
 - Disabled: `fill` with `text-disabled` - no semi-transparent buttons (except switch/checkbox, which dim to 50%).
@@ -92,9 +94,10 @@ Install with `npm install github:vweje/klar`, import `klar/styles.css`, and impo
 
 - App shell: `Sidebar`, `Topbar`, `NavList` (sub-navigation), `Tabs`, `Pagination`, `SettingsSection`.
 - Input: `TextField`, `Textarea`, `Dropdown` (custom select), `Select` (native), `SearchField`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `SegmentedControl`.
-- Charts: `LineChart`, `BarChart`, `BarList`, `Sparkline`.
+- Charts: `LineChart`, `BarChart` (also stacked), `BarList`, `Sparkline`, `DonutChart`, `Heatmap`.
 - Dates: `Calendar` (month, week and day), `DatePicker`.
-- Work: `Kanban`, `Timeline`, `Stepper`, `FileDrop`, `MultiSelect`.
+- Work: `Kanban`, `Gantt`, `Timeline`, `Stepper`, `CommentThread`, `MarkdownEditor`, `Markdown`.
+- Fields: `NumberField`, `CurrencyField`, `CodeInput`, `PasswordField`, `TimePicker`, `DateRangePicker`, `Combobox`, `MultiSelect`, `FileDrop`.
 - Layers that belong to a button: `Popover`, `NotificationInbox`.
 - Content and data: `List`/`ListRow`, `Table`, `Card`, `Stat`, `Badge`, `Avatar`/`AvatarGroup`, `Accordion`, `Kbd`, `Tooltip`.
 - Actions and menus: `Button`, `Menu` (dropdown), `ContextMenu` (right-click), `CommandPalette` (⌘K).

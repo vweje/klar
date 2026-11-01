@@ -4,5 +4,8 @@
   "installCommand": "",
   "buildCommand": "",
   "outputDirectory": ".",
-  "rewrites": [{ "source": "/", "destination": "/site/index.html" }]
+  "rewrites": [
+    { "source": "/", "destination": "/site/index.html" },
+    { "source": "/components", "destination": "/site/components.html" }
+  ]
 }

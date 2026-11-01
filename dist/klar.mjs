@@ -47,9 +47,53 @@ var en = {
   tooLarge: "is larger than",
   wrongType: "is not an allowed file type",
   uploaded: "Uploaded",
-  moveHint: "Press Alt and an arrow key to move the card.",
+  moveHint: "Press Alt and an arrow key to move the card. On touch, press and hold to pick it up.",
   empty: "Nothing here yet.",
-  completed: "Completed"
+  completed: "Completed",
+  bulkActions: "Bulk actions",
+  clearSelection: "Clear selection",
+  columns: "Columns",
+  selectAll: "Select all rows",
+  selectRow: "Select row",
+  showPassword: "Show password",
+  hidePassword: "Hide password",
+  passwordStrength: "Password strength",
+  weak: "Weak",
+  fair: "Fair",
+  good: "Good",
+  strong: "Strong",
+  digit: "Digit",
+  of: "of",
+  increase: "Increase",
+  decrease: "Decrease",
+  chooseRange: "Choose a period",
+  last7: "Last 7 days",
+  last30: "Last 30 days",
+  thisMonth: "This month",
+  lastMonth: "Last month",
+  thisYear: "This year",
+  chooseTime: "Choose a time",
+  searching: "Searching\u2026",
+  loadFailed: "Could not load results.",
+  tryAgain: "Try again",
+  typeToSearch: "Type to search",
+  clear: "Clear",
+  other: "Other",
+  total: "Total",
+  less: "Less",
+  moreLabel: "More",
+  write: "Write",
+  preview: "Preview",
+  bold: "Bold",
+  italic: "Italic",
+  list: "List",
+  link: "Link",
+  code: "Code",
+  nothingToPreview: "Nothing to preview.",
+  comment: "Comment",
+  writeComment: "Write a comment. Type @ to mention someone.",
+  toSend: "to send",
+  noComments: "No comments yet."
 };
 var da = {
   search: "S\xF8g",
@@ -93,9 +137,53 @@ var da = {
   tooLarge: "er st\xF8rre end",
   wrongType: "er ikke en tilladt filtype",
   uploaded: "Uploadet",
-  moveHint: "Tryk Alt og en piletast for at flytte kortet.",
+  moveHint: "Tryk Alt og en piletast for at flytte kortet. P\xE5 touch holder du fingeren p\xE5 kortet for at tage det op.",
   empty: "Intet her endnu.",
-  completed: "F\xE6rdig"
+  completed: "F\xE6rdig",
+  bulkActions: "Massehandlinger",
+  clearSelection: "Ryd valg",
+  columns: "Kolonner",
+  selectAll: "V\xE6lg alle r\xE6kker",
+  selectRow: "V\xE6lg r\xE6kke",
+  showPassword: "Vis adgangskode",
+  hidePassword: "Skjul adgangskode",
+  passwordStrength: "Adgangskodens styrke",
+  weak: "Svag",
+  fair: "Okay",
+  good: "God",
+  strong: "St\xE6rk",
+  digit: "Ciffer",
+  of: "af",
+  increase: "\xD8g",
+  decrease: "S\xE6nk",
+  chooseRange: "V\xE6lg en periode",
+  last7: "Seneste 7 dage",
+  last30: "Seneste 30 dage",
+  thisMonth: "Denne m\xE5ned",
+  lastMonth: "Sidste m\xE5ned",
+  thisYear: "I \xE5r",
+  chooseTime: "V\xE6lg et tidspunkt",
+  searching: "S\xF8ger\u2026",
+  loadFailed: "Kunne ikke hente resultater.",
+  tryAgain: "Pr\xF8v igen",
+  typeToSearch: "Skriv for at s\xF8ge",
+  clear: "Ryd",
+  other: "Andet",
+  total: "I alt",
+  less: "Mindre",
+  moreLabel: "Mere",
+  write: "Skriv",
+  preview: "Forh\xE5ndsvis",
+  bold: "Fed",
+  italic: "Kursiv",
+  list: "Liste",
+  link: "Link",
+  code: "Kode",
+  nothingToPreview: "Intet at forh\xE5ndsvise.",
+  comment: "Komment\xE9r",
+  writeComment: "Skriv en kommentar. Skriv @ for at n\xE6vne nogen.",
+  toSend: "for at sende",
+  noComments: "Ingen kommentarer endnu."
 };
 var locales = { en, da };
 var strings = Object.assign({}, en);
@@ -155,6 +243,60 @@ function useEscape(active, onEscape) {
     };
   });
 }
+var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+var trapStack = [];
+function focusablesIn(el) {
+  return Array.prototype.filter.call(el.querySelectorAll(FOCUSABLE), function(n) {
+    return n.offsetWidth || n.offsetHeight || n.getClientRects().length;
+  });
+}
+function useFocusTrap(active, ref) {
+  var before = R.useRef(null), was = R.useRef(false);
+  if (active && !was.current && typeof document !== "undefined") before.current = document.activeElement;
+  was.current = active;
+  useIsoLayout(function() {
+    var el = ref.current;
+    if (!active || !el) return;
+    var token = {};
+    trapStack.push(token);
+    if (!el.contains(document.activeElement)) {
+      var first = el.querySelector('input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])') || focusablesIn(el)[0];
+      if (!first) {
+        el.setAttribute("tabindex", "-1");
+        first = el;
+      }
+      first.focus({ preventScroll: true });
+    }
+    function key(e) {
+      if (e.key !== "Tab" || trapStack[trapStack.length - 1] !== token) return;
+      var list = focusablesIn(el);
+      if (!list.length) {
+        e.preventDefault();
+        return;
+      }
+      var a = list[0], z = list[list.length - 1], cur = document.activeElement;
+      if (e.shiftKey && (cur === a || !el.contains(cur))) {
+        e.preventDefault();
+        z.focus();
+      } else if (!e.shiftKey && (cur === z || !el.contains(cur))) {
+        e.preventDefault();
+        a.focus();
+      }
+    }
+    document.addEventListener("keydown", key);
+    var back = before.current;
+    return function() {
+      document.removeEventListener("keydown", key);
+      trapStack = trapStack.filter(function(t) {
+        return t !== token;
+      });
+      Promise.resolve().then(function() {
+        var cur = document.activeElement;
+        if (back && back.focus && document.contains(back) && (!cur || cur === document.body || el.contains(cur))) back.focus({ preventScroll: true });
+      });
+    };
+  }, [active]);
+}
 function onScrimDown(onClose) {
   return function(e) {
     if (e.target === e.currentTarget && onClose) onClose();
@@ -208,7 +350,19 @@ var PATHS = {
   "upload": "M12 16V4M7 9l5-5 5 5M4 20h16",
   "filter": "M4 6h16M7 12h10M10 18h4",
   "logout": "M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10",
-  "file": "M7 3h7l5 5v13H7zM14 3v5h5"
+  "file": "M7 3h7l5 5v13H7zM14 3v5h5",
+  "chevron-up": "M6 15l6-6 6 6",
+  "minus": "M6 12h12",
+  "eye": "M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  "eye-off": "M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6 0 9.5 7 9.5 7a16 16 0 0 1-3 3.9M6.6 6.6C4 8.3 2.5 12 2.5 12S6 19 12 19c1.5 0 2.9-.4 4.1-1M9.9 9.9a3 3 0 0 0 4.2 4.2",
+  "clock": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
+  "message": "M4 5h16v11H9l-5 4z",
+  "bold": "M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z",
+  "italic": "M11 5h6M7 19h6M15 5l-6 14",
+  "list": "M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01",
+  "link": "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
+  "code": "M8 8l-4 4 4 4M16 8l4 4-4 4",
+  "send": "M21 3L10 14M21 3l-7 18-4-7-7-4z"
 };
 function Icon(p) {
   var size = p.size || 16;
@@ -281,8 +435,8 @@ function Checkbox(p) {
     { className: cx("k-check", p.disabled && "k-check--disabled", p.className) },
     h(
       "button",
-      { type: "button", role: "checkbox", "aria-checked": on, disabled: p.disabled, "aria-labelledby": p.label ? id : void 0, "aria-label": p.label ? void 0 : p["aria-label"], className: cx("k-check__box", on && "k-check__box--on"), onClick: toggle },
-      on ? h(Icon, { name: "check", size: 12, weight: 3 }) : null
+      { type: "button", role: "checkbox", "aria-checked": p.indeterminate && !on ? "mixed" : on, disabled: p.disabled, "aria-labelledby": p.label ? id : void 0, "aria-label": p.label ? void 0 : p["aria-label"], className: cx("k-check__box", (on || p.indeterminate) && "k-check__box--on"), onClick: toggle },
+      on ? h(Icon, { name: "check", size: 12, weight: 3 }) : p.indeterminate ? h(Icon, { name: "minus", size: 12, weight: 3 }) : null
     ),
     p.label ? h(
       "div",
@@ -506,11 +660,13 @@ function Dialog(p) {
   var id = R.useId();
   var presence = usePresence(p.open !== false, "duration-fast");
   useEscape(p.overlay && p.open !== false && !!p.onClose, p.onClose);
+  var trap = R.useRef(null);
+  useFocusTrap(!!p.overlay && p.open !== false, trap);
   if (!presence.show) return null;
   var acts = p.actions && p.actions.length ? p.actions : [{ label: "OK", variant: "primary" }];
   var panel = h(
     "div",
-    { className: cx("k-dialog", p.className), role: "dialog", "aria-modal": p.overlay ? true : void 0, "aria-labelledby": id + "-t", "aria-describedby": p.message ? id + "-m" : void 0 },
+    { ref: trap, className: cx("k-dialog", p.className), role: "dialog", "aria-modal": p.overlay ? true : void 0, "aria-labelledby": id + "-t", "aria-describedby": p.message ? id + "-m" : void 0 },
     h(
       "div",
       { className: "k-dialog__content" },
@@ -946,36 +1102,168 @@ function Stat(p) {
 function Table(p) {
   var cols = p.columns || [], rows = p.rows || [];
   var ctx = useContextMenu();
+  var sortSt = useControlled(p.sort, p.defaultSort || null), sort = sortSt[0];
+  var selSt = useControlled(p.selected, p.defaultSelected || []), selected = selSt[0] || [];
+  var hidSt = useControlled(p.hiddenColumns, p.defaultHiddenColumns || []), hidden = hidSt[0] || [];
+  var scrollTop = useState2(0);
+  var shown = cols.filter(function(c) {
+    return hidden.indexOf(c.key) < 0;
+  });
+  var idOf = function(r, i) {
+    return r.id != null ? r.id : i;
+  };
+  function setSort(key) {
+    var next = !sort || sort.key !== key ? { key, dir: "asc" } : sort.dir === "asc" ? { key, dir: "desc" } : null;
+    sortSt[1](next);
+    if (p.onSortChange) p.onSortChange(next);
+  }
+  var sorted = rows;
+  if (sort && !p.manualSort) {
+    var sc = cols.filter(function(c) {
+      return c.key === sort.key;
+    })[0];
+    var get = sc && sc.sortValue ? sc.sortValue : function(r) {
+      return r[sort.key];
+    };
+    sorted = rows.slice().sort(function(a, b) {
+      var x = get(a), y = get(b);
+      var c = typeof x === "number" && typeof y === "number" ? x - y : String(x == null ? "" : x).localeCompare(String(y == null ? "" : y), strings.locale, { numeric: true });
+      return sort.dir === "asc" ? c : -c;
+    });
+  }
+  function setSelected(next) {
+    selSt[1](next);
+    if (p.onSelectedChange) p.onSelectedChange(next);
+  }
+  var ids = sorted.map(idOf);
+  var allOn = ids.length > 0 && ids.every(function(id) {
+    return selected.indexOf(id) >= 0;
+  });
+  var someOn = !allOn && ids.some(function(id) {
+    return selected.indexOf(id) >= 0;
+  });
+  function toggleRow(id) {
+    setSelected(selected.indexOf(id) >= 0 ? selected.filter(function(x) {
+      return x !== id;
+    }) : selected.concat([id]));
+  }
+  function setHidden(next) {
+    hidSt[1](next);
+    if (p.onHiddenColumnsChange) p.onHiddenColumnsChange(next);
+  }
+  var rowHeight = p.rowHeight || 49, virtual = p.virtualize != null ? p.virtualize : sorted.length > 100;
+  var maxHeight = p.maxHeight || (virtual ? 480 : null);
+  var from = 0, to = sorted.length;
+  if (virtual) {
+    from = Math.max(0, Math.floor(scrollTop[0] / rowHeight) - 8);
+    to = Math.min(sorted.length, Math.ceil((scrollTop[0] + maxHeight) / rowHeight) + 8);
+  }
+  var span = shown.length + (p.selectable ? 1 : 0);
+  var selectedRows = sorted.filter(function(r, i) {
+    return selected.indexOf(idOf(r, i)) >= 0;
+  });
+  var toggleable = cols.filter(function(c) {
+    return c.hideable !== false && c.label;
+  });
+  var toolbar = p.selectable && p.bulkActions || p.columnToggle ? h(
+    "div",
+    { className: "k-table__toolbar" },
+    p.selectable && p.bulkActions && selected.length ? h(
+      "div",
+      { className: "k-table__bulk", role: "region", "aria-label": strings.bulkActions },
+      h("span", { className: "k-table__bulk-count" }, selected.length + " " + strings.selected.toLowerCase()),
+      h("div", { className: "k-table__bulk-actions" }, p.bulkActions(selectedRows)),
+      h(Button, { size: "sm", variant: "ghost", icon: "xmark", onClick: function() {
+        setSelected([]);
+      } }, strings.clearSelection)
+    ) : h("span", { className: "k-table__toolbar-space" }),
+    p.columnToggle ? h(Menu, {
+      align: "end",
+      trigger: h(Button, { size: "sm", variant: "secondary", icon: "settings" }, strings.columns),
+      items: toggleable.map(function(c) {
+        var on = hidden.indexOf(c.key) < 0;
+        return { label: typeof c.label === "string" ? c.label : c.key, checked: on, onSelect: function() {
+          setHidden(on ? hidden.concat([c.key]) : hidden.filter(function(k) {
+            return k !== c.key;
+          }));
+        } };
+      })
+    }) : null
+  ) : null;
   return h(
     R.Fragment,
     null,
+    toolbar,
     h(
       "div",
-      { className: cx("k-table-wrap", p.className) },
+      {
+        className: cx("k-table-wrap", maxHeight && "k-table-wrap--scroll", p.className),
+        style: maxHeight ? { maxHeight } : void 0,
+        onScroll: virtual ? function(e) {
+          scrollTop[1](e.currentTarget.scrollTop);
+        } : void 0
+      },
       h(
         "table",
-        { className: "k-table" },
-        h("thead", null, h("tr", null, cols.map(function(c) {
-          return h("th", { key: c.key, style: { width: c.width, textAlign: c.align || "left" } }, c.label);
-        }))),
-        h("tbody", null, rows.map(function(r, i) {
-          return h(
-            "tr",
-            {
-              key: r.id != null ? r.id : i,
-              className: cx(p.onRowClick && "k-table__row--action", ctx.isOpenFor(r) && "k-table__row--menu") || void 0,
-              onClick: p.onRowClick ? function() {
-                p.onRowClick(r);
-              } : void 0,
-              onContextMenu: p.rowMenu ? function(e) {
-                ctx.open(e, r);
-              } : void 0
-            },
-            cols.map(function(c) {
-              return h("td", { key: c.key, style: { textAlign: c.align || "left" }, className: c.strong ? "k-table__strong" : c.mono ? "k-table__mono" : void 0 }, c.render ? c.render(r) : r[c.key]);
-            })
-          );
-        }))
+        { className: "k-table", "aria-rowcount": virtual ? sorted.length + 1 : void 0, "aria-label": p["aria-label"] },
+        h("thead", null, h(
+          "tr",
+          null,
+          p.selectable ? h("th", { className: "k-table__select" }, h(Checkbox, { "aria-label": strings.selectAll, checked: allOn, indeterminate: someOn, onChange: function() {
+            setSelected(allOn ? [] : ids);
+          } })) : null,
+          shown.map(function(c) {
+            var dir = sort && sort.key === c.key ? sort.dir : null;
+            return h(
+              "th",
+              { key: c.key, style: { width: c.width, textAlign: c.align || "left" }, "aria-sort": c.sortable ? dir === "asc" ? "ascending" : dir === "desc" ? "descending" : "none" : void 0 },
+              c.sortable ? h(
+                "button",
+                { type: "button", className: cx("k-table__sort", dir && "k-table__sort--on", c.align === "right" && "k-table__sort--right"), onClick: function() {
+                  setSort(c.key);
+                } },
+                c.label,
+                h(Icon, { name: dir === "desc" ? "chevron-down" : dir === "asc" ? "chevron-up" : "chevron-down", size: 13, className: "k-table__sort-icon" })
+              ) : c.label
+            );
+          })
+        )),
+        h(
+          "tbody",
+          null,
+          virtual && from > 0 ? h("tr", { "aria-hidden": true }, h("td", { colSpan: span, className: "k-table__spacer", style: { height: from * rowHeight } })) : null,
+          sorted.slice(from, to).map(function(r, j) {
+            var i = from + j, id = idOf(r, i), on = selected.indexOf(id) >= 0;
+            return h(
+              "tr",
+              {
+                key: id,
+                "aria-rowindex": virtual ? i + 2 : void 0,
+                "aria-selected": p.selectable ? on : void 0,
+                className: cx(p.onRowClick && "k-table__row--action", on && "k-table__row--selected", ctx.isOpenFor(r) && "k-table__row--menu") || void 0,
+                onClick: p.onRowClick ? function() {
+                  p.onRowClick(r);
+                } : void 0,
+                onContextMenu: p.rowMenu ? function(e) {
+                  ctx.open(e, r);
+                } : void 0
+              },
+              p.selectable ? h(
+                "td",
+                { className: "k-table__select", onClick: function(e) {
+                  e.stopPropagation();
+                } },
+                h(Checkbox, { "aria-label": strings.selectRow, checked: on, onChange: function() {
+                  toggleRow(id);
+                } })
+              ) : null,
+              shown.map(function(c) {
+                return h("td", { key: c.key, style: { textAlign: c.align || "left" }, className: c.strong ? "k-table__strong" : c.mono ? "k-table__mono" : void 0 }, c.render ? c.render(r) : r[c.key]);
+              })
+            );
+          }),
+          virtual && to < sorted.length ? h("tr", { "aria-hidden": true }, h("td", { colSpan: span, className: "k-table__spacer", style: { height: (sorted.length - to) * rowHeight } })) : null
+        )
       )
     ),
     p.rowMenu && ctx.data ? ctx.render(p.rowMenu(ctx.data)) : null
@@ -1247,6 +1535,8 @@ function CommandPalette(p) {
       act[1](0);
     }
   }, [p.open]);
+  var trap = R.useRef(null);
+  useFocusTrap(!!p.overlay && p.open !== false, trap);
   if (!presence.show) return null;
   var list = (p.items || []).filter(function(it) {
     return !query || it.label.toLowerCase().indexOf(query) >= 0;
@@ -1271,7 +1561,7 @@ function CommandPalette(p) {
   }
   var panel = h(
     "div",
-    { className: cx("k-cmdk", p.className), role: "dialog", "aria-label": strings.commands },
+    { ref: trap, className: cx("k-cmdk", p.className), role: "dialog", "aria-modal": p.overlay ? true : void 0, "aria-label": strings.commands },
     h(
       "div",
       { className: "k-cmdk__search" },
@@ -1474,10 +1764,12 @@ function Drawer(p) {
   var id = R.useId();
   var presence = usePresence(p.open !== false, "duration-base");
   useEscape(p.overlay && p.open !== false && !!p.onClose, p.onClose);
+  var trap = R.useRef(null);
+  useFocusTrap(!!p.overlay && p.open !== false, trap);
   if (!presence.show) return null;
   var panel = h(
     "aside",
-    { className: cx("k-drawer", "k-drawer--" + (p.side || "right"), p.className), role: "dialog", "aria-modal": p.overlay ? true : void 0, "aria-labelledby": id },
+    { ref: trap, className: cx("k-drawer", "k-drawer--" + (p.side || "right"), p.className), role: "dialog", "aria-modal": p.overlay ? true : void 0, "aria-labelledby": id },
     h(
       "header",
       { className: "k-drawer__head" },
@@ -1493,10 +1785,12 @@ function Modal(p) {
   var id = R.useId();
   var presence = usePresence(p.open !== false, "duration-fast");
   useEscape(p.open !== false && !!p.onClose, p.onClose);
+  var trap = R.useRef(null);
+  useFocusTrap(p.open !== false, trap);
   if (!presence.show) return null;
   var panel = h(
     "div",
-    { className: cx("k-modal", p.size === "md" && "k-modal--md", p.className), role: "dialog", "aria-modal": true, "aria-labelledby": id },
+    { ref: trap, className: cx("k-modal", p.size === "md" && "k-modal--md", p.className), role: "dialog", "aria-modal": true, "aria-labelledby": id },
     h(
       "header",
       { className: "k-modal__head" },
@@ -1662,26 +1956,137 @@ function NotificationInbox(p) {
 }
 function Kanban(p) {
   var cols = p.columns || [];
-  var drag = useState2(null), over = useState2(null), refocus = R.useRef(null), root = R.useRef(null), hint = R.useId();
+  var ghost = useState2(null), over = useState2(null);
+  var dragRef = R.useRef(null), overRef = R.useRef(null), suppress = R.useRef(false), refocus = R.useRef(null), root = R.useRef(null), hint = R.useId();
+  var colsRef = R.useRef(cols);
+  colsRef.current = cols;
+  var propsRef = R.useRef(p);
+  propsRef.current = p;
   function locate(id) {
-    for (var c = 0; c < cols.length; c++) for (var i = 0; i < cols[c].items.length; i++) if (cols[c].items[i].id === id) return { col: c, index: i };
+    var cs = colsRef.current;
+    for (var c = 0; c < cs.length; c++) for (var i = 0; i < cs[c].items.length; i++) if (cs[c].items[i].id === id) return { col: c, index: i };
     return null;
   }
   function commit(id, toCol, toIndex) {
-    var from = locate(id);
-    if (!from || !p.onMove) return;
-    if (cols[from.col].id === toCol && toIndex > from.index) toIndex -= 1;
-    if (cols[from.col].id === toCol && toIndex === from.index) return;
-    p.onMove(id, toCol, toIndex);
+    var from = locate(id), cs = colsRef.current;
+    if (!from || !propsRef.current.onMove) return;
+    if (cs[from.col].id === toCol && toIndex > from.index) toIndex -= 1;
+    if (cs[from.col].id === toCol && toIndex === from.index) return;
+    propsRef.current.onMove(id, toCol, toIndex);
   }
-  function indexAt(list, y) {
-    var cards = list ? list.querySelectorAll("[data-card]") : [];
+  function indexAt(list, y, dragged) {
+    var cards = list ? Array.prototype.filter.call(list.querySelectorAll("[data-card]"), function(c) {
+      return c.getAttribute("data-card") !== String(dragged);
+    }) : [];
     for (var i = 0; i < cards.length; i++) {
       var r = cards[i].getBoundingClientRect();
       if (y < r.top + r.height / 2) return i;
     }
     return cards.length;
   }
+  function setOver(v) {
+    overRef.current = v;
+    over[1](v);
+  }
+  function begin(x, y) {
+    var s = dragRef.current;
+    if (!s || s.active) return;
+    s.active = true;
+    ghost[1]({ id: s.id, item: s.item, col: s.col, x: x - s.dx, y: y - s.dy, width: s.width });
+    if (s.touch && navigator.vibrate) navigator.vibrate(8);
+  }
+  function stop() {
+    var s = dragRef.current;
+    if (!s) return;
+    if (s.timer) clearTimeout(s.timer);
+    var hd = s.handlers;
+    window.removeEventListener("pointermove", hd.move);
+    window.removeEventListener("pointerup", hd.up);
+    window.removeEventListener("pointercancel", hd.cancel);
+    window.removeEventListener("touchmove", hd.block);
+    document.removeEventListener("keydown", hd.esc);
+    dragRef.current = null;
+  }
+  function onMove(e) {
+    var s = dragRef.current;
+    if (!s) return;
+    var dist = Math.abs(e.clientX - s.startX) + Math.abs(e.clientY - s.startY);
+    if (!s.active) {
+      if (s.touch) {
+        if (dist > 10) stop();
+        return;
+      }
+      if (dist < 6) return;
+      begin(e.clientX, e.clientY);
+    }
+    e.preventDefault();
+    ghost[1](function(g2) {
+      return g2 && Object.assign({}, g2, { x: e.clientX - s.dx, y: e.clientY - s.dy });
+    });
+    var el = document.elementFromPoint(e.clientX, e.clientY), col = el && el.closest ? el.closest("[data-col]") : null;
+    if (col && root.current && root.current.contains(col)) {
+      var next = { col: col.getAttribute("data-col"), index: indexAt(col.querySelector(".k-kanban__list"), e.clientY, s.id) };
+      var cur = overRef.current;
+      if (!cur || cur.col !== next.col || cur.index !== next.index) setOver(next);
+    } else if (overRef.current) setOver(null);
+    var box = root.current && root.current.getBoundingClientRect();
+    if (box) {
+      if (e.clientX > box.right - 48) root.current.scrollLeft += 14;
+      else if (e.clientX < box.left + 48) root.current.scrollLeft -= 14;
+    }
+  }
+  function blockScroll(e) {
+    if (dragRef.current && dragRef.current.active) e.preventDefault();
+  }
+  function onUp() {
+    var s = dragRef.current, target = overRef.current;
+    stop();
+    if (s && s.active) {
+      suppress.current = true;
+      setTimeout(function() {
+        suppress.current = false;
+      }, 0);
+      if (target) {
+        var from = locate(s.id), index = target.index;
+        if (from && colsRef.current[from.col].id === target.col && index >= from.index) index += 1;
+        commit(s.id, target.col, index);
+      }
+    }
+    ghost[1](null);
+    setOver(null);
+  }
+  function onCancel() {
+    stop();
+    ghost[1](null);
+    setOver(null);
+  }
+  function onEsc(e) {
+    if (e.key === "Escape") onCancel();
+  }
+  function onPointerDown(e, item, col) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (e.target.closest && e.target.closest("button, a, input, textarea, select")) return;
+    var r = e.currentTarget.getBoundingClientRect(), touch = e.pointerType !== "mouse";
+    stop();
+    var hd = { move: onMove, up: onUp, cancel: onCancel, block: blockScroll, esc: onEsc };
+    dragRef.current = { id: item.id, item, col, startX: e.clientX, startY: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, width: r.width, active: false, touch, handlers: hd };
+    if (touch) {
+      var x = e.clientX, y = e.clientY;
+      dragRef.current.timer = setTimeout(function() {
+        begin(x, y);
+      }, 280);
+    }
+    window.addEventListener("pointermove", hd.move, { passive: false });
+    window.addEventListener("pointerup", hd.up);
+    window.addEventListener("pointercancel", hd.cancel);
+    window.addEventListener("touchmove", hd.block, { passive: false });
+    document.addEventListener("keydown", hd.esc);
+  }
+  R.useEffect(function() {
+    return function() {
+      stop();
+    };
+  }, []);
   function onKey(e, item, colIndex, index) {
     if (e.key === "Enter" && p.onCardClick) {
       e.preventDefault();
@@ -1705,71 +2110,46 @@ function Kanban(p) {
     refocus.current = null;
     if (el) el.focus();
   });
+  var g = ghost[0];
   return h(
     "div",
-    { ref: root, className: cx("k-kanban", p.className) },
+    { ref: root, className: cx("k-kanban", g && "k-kanban--dragging", p.className) },
     h("p", { id: hint, className: "k-sr-only" }, strings.moveHint),
     cols.map(function(col, c) {
       var at = over[0] && over[0].col === col.id ? over[0].index : -1;
-      var drop = function(k) {
-        return h("div", { key: "drop-" + k, className: "k-kanban__drop", "aria-hidden": true });
-      };
+      var items = col.items, n = 0;
       return h(
         "section",
-        {
-          key: col.id,
-          className: cx("k-kanban__col", at >= 0 && "k-kanban__col--over"),
-          "aria-label": col.title,
-          onDragOver: function(e) {
-            if (!drag[0]) return;
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-            var idx = indexAt(e.currentTarget.querySelector(".k-kanban__list"), e.clientY);
-            if (!over[0] || over[0].col !== col.id || over[0].index !== idx) over[1]({ col: col.id, index: idx });
-          },
-          onDragLeave: function(e) {
-            if (!e.currentTarget.contains(e.relatedTarget)) over[1](null);
-          },
-          onDrop: function(e) {
-            e.preventDefault();
-            if (drag[0]) commit(drag[0], col.id, at >= 0 ? at : col.items.length);
-            drag[1](null);
-            over[1](null);
-          }
-        },
+        { key: col.id, "data-col": col.id, className: cx("k-kanban__col", at >= 0 && "k-kanban__col--over"), "aria-label": typeof col.title === "string" ? col.title : void 0 },
         h(
           "header",
           { className: "k-kanban__head" },
           h("h3", { className: "k-kanban__title" }, col.title),
-          h("span", { className: "k-kanban__count" }, col.items.length),
+          h("span", { className: "k-kanban__count" }, items.length),
           col.action || null
         ),
         h(
           "div",
           { className: "k-kanban__list" },
-          col.items.map(function(item, i) {
+          items.map(function(item, i) {
+            var dragging = g && g.id === item.id;
+            var line = !dragging && at === n ? h("div", { key: "drop", className: "k-kanban__drop", "aria-hidden": true }) : null;
+            if (!dragging) n++;
             return h(
               R.Fragment,
               { key: item.id },
-              at === i ? drop(i) : null,
+              line,
               h("div", {
                 "data-card": item.id,
-                className: cx("k-kanban__card", drag[0] === item.id && "k-kanban__card--dragging"),
-                draggable: true,
+                className: cx("k-kanban__card", dragging && "k-kanban__card--dragging"),
                 tabIndex: 0,
                 role: p.onCardClick ? "button" : void 0,
                 "aria-describedby": hint,
-                onDragStart: function(e) {
-                  e.dataTransfer.effectAllowed = "move";
-                  e.dataTransfer.setData("text/plain", String(item.id));
-                  drag[1](item.id);
-                },
-                onDragEnd: function() {
-                  drag[1](null);
-                  over[1](null);
+                onPointerDown: function(e) {
+                  onPointerDown(e, item, col.id);
                 },
                 onClick: p.onCardClick ? function() {
-                  p.onCardClick(item, col);
+                  if (!suppress.current) p.onCardClick(item, col);
                 } : void 0,
                 onKeyDown: function(e) {
                   onKey(e, item, c, i);
@@ -1777,11 +2157,16 @@ function Kanban(p) {
               }, p.renderCard ? p.renderCard(item, col) : h("span", { className: "k-kanban__card-title" }, item.title))
             );
           }),
-          at >= col.items.length ? drop("end") : null,
-          col.items.length === 0 && at < 0 ? h("p", { className: "k-kanban__empty" }, p.emptyText || strings.empty) : null
+          at >= n ? h("div", { className: "k-kanban__drop", "aria-hidden": true }) : null,
+          items.length === 0 && at < 0 ? h("p", { className: "k-kanban__empty" }, p.emptyText || strings.empty) : null
         )
       );
-    })
+    }),
+    g ? h(
+      "div",
+      { className: "k-kanban__ghost", style: { width: g.width, transform: "translate(" + g.x + "px," + g.y + "px)" }, "aria-hidden": true },
+      p.renderCard ? p.renderCard(g.item, null) : h("span", { className: "k-kanban__card-title" }, g.item.title)
+    ) : null
   );
 }
 function MultiSelect(p) {
@@ -2129,6 +2514,732 @@ function Stepper(p) {
     );
   }));
 }
+function useFloating(open, wrap, field, list, onClose, estimate) {
+  var pos = useState2(null);
+  function place() {
+    if (!field.current) return;
+    var r = field.current.getBoundingClientRect();
+    var below = window.innerHeight - r.bottom, up = below < estimate + 12 && r.top > below;
+    pos[1]({ left: r.left, width: r.width, top: up ? void 0 : r.bottom + 6, bottom: up ? window.innerHeight - r.top + 6 : void 0, up });
+  }
+  useIsoLayout(function() {
+    if (open) place();
+  }, [open]);
+  R.useEffect(function() {
+    if (!open) return;
+    function down(e) {
+      if (wrap.current && !wrap.current.contains(e.target)) onClose();
+    }
+    function scroll(e) {
+      if (!list.current || !list.current.contains(e.target)) onClose();
+    }
+    function resize() {
+      onClose();
+    }
+    document.addEventListener("mousedown", down);
+    window.addEventListener("scroll", scroll, true);
+    window.addEventListener("resize", resize);
+    return function() {
+      document.removeEventListener("mousedown", down);
+      window.removeEventListener("scroll", scroll, true);
+      window.removeEventListener("resize", resize);
+    };
+  }, [open]);
+  return pos[0];
+}
+function scrollActiveIntoList(list) {
+  var l = list.current, el = l && l.querySelector("[data-active]");
+  if (!el) return;
+  if (el.offsetTop < l.scrollTop) l.scrollTop = el.offsetTop - 4;
+  else if (el.offsetTop + el.offsetHeight > l.scrollTop + l.clientHeight) l.scrollTop = el.offsetTop + el.offsetHeight - l.clientHeight + 4;
+}
+function separators(locale) {
+  var parts = 12345.6.toLocaleString(locale).replace(/\d/g, "");
+  return { group: parts.length > 1 ? parts.charAt(0) : "", decimal: parts.charAt(parts.length - 1) || "." };
+}
+function parseLocaleNumber(text, locale) {
+  var raw = String(text).trim();
+  if (!raw) return null;
+  var s = raw.replace(/\s/g, "").replace(/[^\d.,-]/g, "");
+  if (!s || s === "-") return NaN;
+  var sep = separators(locale);
+  if (sep.decimal === "," && s.indexOf(",") < 0 && /^-?\d+\.\d{1,2}$|^-?\d+\.\d{4,}$/.test(s)) return Number(s);
+  if (sep.group) s = s.split(sep.group).join("");
+  s = s.replace(sep.decimal, ".");
+  var n = Number(s);
+  return isNaN(n) ? NaN : n;
+}
+function NumberField(p) {
+  var auto = R.useId(), id = p.id || auto, locale = p.locale || strings.locale, decimals = p.decimals || 0, step = p.step || 1;
+  var st = useControlled(p.value, p.defaultValue != null ? p.defaultValue : null), v = st[0];
+  var fmt = function(n) {
+    return n == null || isNaN(n) ? "" : Number(n).toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  };
+  var text = useState2(fmt(v)), focused = useState2(false), note = p.error || p.hint;
+  R.useEffect(function() {
+    if (!focused[0]) text[1](fmt(v));
+  }, [v, locale]);
+  function clamp(n) {
+    if (p.min != null) n = Math.max(p.min, n);
+    if (p.max != null) n = Math.min(p.max, n);
+    var f = Math.pow(10, decimals);
+    return Math.round(n * f) / f;
+  }
+  function set(n) {
+    st[1](n);
+    if (p.onChange) p.onChange(n);
+  }
+  function commit(raw) {
+    var n = parseLocaleNumber(raw, locale);
+    if (n === null) {
+      set(null);
+      text[1]("");
+      return;
+    }
+    if (isNaN(n)) {
+      text[1](fmt(v));
+      return;
+    }
+    n = clamp(n);
+    set(n);
+    text[1](fmt(n));
+  }
+  function bump(dir) {
+    var base = parseLocaleNumber(text[0], locale);
+    if (base === null || isNaN(base)) base = v == null ? p.min != null ? p.min : 0 : v;
+    var n = clamp(base + dir * step);
+    set(n);
+    text[1](fmt(n));
+  }
+  return h(
+    "div",
+    { className: cx("k-field", p.error && "k-field--error", p.className) },
+    p.label ? h("label", { className: "k-field__label", htmlFor: id }, p.label) : null,
+    h(
+      "div",
+      { className: cx("k-input k-number", p.disabled && "k-number--disabled") },
+      p.prefix ? h("span", { className: "k-number__affix" }, p.prefix) : null,
+      h("input", {
+        id,
+        name: p.name,
+        className: "k-number__input",
+        type: "text",
+        inputMode: decimals ? "decimal" : "numeric",
+        autoComplete: "off",
+        disabled: p.disabled,
+        placeholder: p.placeholder,
+        value: text[0],
+        role: "spinbutton",
+        "aria-valuenow": v == null ? void 0 : v,
+        "aria-valuemin": p.min,
+        "aria-valuemax": p.max,
+        "aria-label": p.label ? void 0 : p["aria-label"],
+        "aria-invalid": p.error ? true : void 0,
+        "aria-describedby": note ? id + "-note" : void 0,
+        onFocus: function() {
+          focused[1](true);
+        },
+        onBlur: function() {
+          focused[1](false);
+          commit(text[0]);
+        },
+        onChange: function(e) {
+          text[1](e.target.value);
+        },
+        onKeyDown: function(e) {
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            bump(1);
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            bump(-1);
+          } else if (e.key === "Enter") commit(text[0]);
+        }
+      }),
+      p.unit ? h("span", { className: "k-number__affix" }, p.unit) : null,
+      p.stepper !== false ? h(
+        "span",
+        { className: "k-number__steps" },
+        h("button", { type: "button", tabIndex: -1, className: "k-number__step", "aria-label": strings.decrease, disabled: p.disabled || p.min != null && v != null && v <= p.min, onClick: function() {
+          bump(-1);
+        } }, h(Icon, { name: "minus", size: 13, weight: 2.5 })),
+        h("button", { type: "button", tabIndex: -1, className: "k-number__step", "aria-label": strings.increase, disabled: p.disabled || p.max != null && v != null && v >= p.max, onClick: function() {
+          bump(1);
+        } }, h(Icon, { name: "plus", size: 13, weight: 2.5 }))
+      ) : null
+    ),
+    note ? h("p", { id: id + "-note", className: "k-field__note" }, p.error ? h(Icon, { name: "info", size: 13 }) : null, note) : null
+  );
+}
+var CURRENCY_AFFIX = { DKK: { unit: "kr." }, SEK: { unit: "kr" }, NOK: { unit: "kr" }, EUR: { unit: "\u20AC" }, USD: { prefix: "$" }, GBP: { prefix: "\xA3" } };
+function CurrencyField(p) {
+  var currency = p.currency || "DKK", affix = CURRENCY_AFFIX[currency] || { unit: currency };
+  return h(NumberField, Object.assign({}, p, {
+    decimals: p.decimals != null ? p.decimals : 2,
+    stepper: false,
+    // Danish kroner are written the Danish way: 1.234,50 kr.
+    locale: p.locale || (currency === "DKK" ? "da-DK" : strings.locale),
+    unit: p.unit || affix.unit,
+    prefix: p.prefix || affix.prefix
+  }));
+}
+function CodeInput(p) {
+  var length = p.length || 6, boxes = R.useRef([]), id = R.useId();
+  var st = useControlled(p.value, p.defaultValue || ""), v = String(st[0] || "").slice(0, length);
+  function set(next, focusAt) {
+    next = String(next).replace(/\D/g, "").slice(0, length);
+    st[1](next);
+    if (p.onChange) p.onChange(next);
+    if (next.length === length && next !== v && p.onComplete) p.onComplete(next);
+    if (focusAt != null) {
+      var el = boxes.current[Math.max(0, Math.min(focusAt, length - 1))];
+      if (el) el.focus();
+    }
+  }
+  var cells = [];
+  for (var i = 0; i < length; i++) (function(i2) {
+    cells.push(h("input", {
+      key: i2,
+      ref: function(el) {
+        boxes.current[i2] = el;
+      },
+      className: cx("k-code__box", length === 6 && i2 === 3 && "k-code__box--gap"),
+      inputMode: "numeric",
+      autoComplete: i2 === 0 ? "one-time-code" : "off",
+      maxLength: i2 === 0 ? length : 1,
+      value: v.charAt(i2),
+      disabled: p.disabled,
+      "aria-invalid": p.error ? true : void 0,
+      "aria-label": strings.digit + " " + (i2 + 1) + " " + strings.of + " " + length,
+      autoFocus: p.autoFocus && i2 === 0,
+      onFocus: function(e) {
+        e.target.select();
+      },
+      onChange: function(e) {
+        var d = e.target.value.replace(/\D/g, "");
+        if (!d) return;
+        if (d.length > 1) {
+          set(d, d.length);
+          return;
+        }
+        var at = Math.min(i2, v.length);
+        set(v.slice(0, at) + d + v.slice(at + 1), at + 1);
+      },
+      onKeyDown: function(e) {
+        if (e.key === "Backspace") {
+          e.preventDefault();
+          if (v.charAt(i2)) set(v.slice(0, i2) + v.slice(i2 + 1), i2);
+          else if (i2 > 0) set(v.slice(0, i2 - 1) + v.slice(i2), i2 - 1);
+        } else if (e.key === "ArrowLeft" && i2 > 0) {
+          e.preventDefault();
+          boxes.current[i2 - 1].focus();
+        } else if (e.key === "ArrowRight" && i2 < length - 1) {
+          e.preventDefault();
+          boxes.current[Math.min(i2 + 1, v.length)].focus();
+        }
+      },
+      onPaste: function(e) {
+        e.preventDefault();
+        set((e.clipboardData || window.clipboardData).getData("text"), length);
+      }
+    }));
+  })(i);
+  var note = p.error || p.hint;
+  return h(
+    "div",
+    { className: cx("k-field", p.error && "k-field--error", p.className) },
+    p.label ? h("span", { id: id + "-label", className: "k-field__label" }, p.label) : null,
+    h("div", { className: "k-code", role: "group", "aria-labelledby": p.label ? id + "-label" : void 0, "aria-label": p.label ? void 0 : p["aria-label"] }, cells),
+    note ? h("p", { className: "k-field__note" }, p.error ? h(Icon, { name: "info", size: 13 }) : null, note) : null
+  );
+}
+function passwordScore(pw) {
+  if (!pw) return 0;
+  var s = 0;
+  if (pw.length >= 8) s++;
+  if (pw.length >= 12) s++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
+  if (/\d/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  if (pw.length < 8 || /^(password|qwerty|123456|adgangskode|letmein)/i.test(pw) || /(.)\1{3,}/.test(pw)) s = Math.min(s, 1);
+  return Math.max(1, Math.min(4, s));
+}
+function PasswordField(p) {
+  var auto = R.useId(), id = p.id || auto, show = useState2(false);
+  var own = useState2(p.defaultValue || ""), value = p.value != null ? p.value : own[0];
+  var level = p.strength ? passwordScore(value) : 0, note = p.error || p.hint;
+  var words = [null, strings.weak, strings.fair, strings.good, strings.strong], tones = [null, "danger", "warning", "success", "success"];
+  var rest = omit(p, ["label", "hint", "error", "className", "id", "strength", "onChange", "defaultValue", "value"]);
+  return h(
+    "div",
+    { className: cx("k-field", p.error && "k-field--error", p.className) },
+    p.label ? h("label", { className: "k-field__label", htmlFor: id }, p.label) : null,
+    h(
+      "div",
+      { className: "k-password" },
+      h("input", Object.assign({
+        id,
+        className: "k-input k-password__input",
+        type: show[0] ? "text" : "password",
+        value,
+        autoComplete: p.strength ? "new-password" : "current-password",
+        "aria-invalid": p.error ? true : void 0,
+        "aria-describedby": cx(note && id + "-note", level && id + "-strength") || void 0,
+        onChange: function(e) {
+          own[1](e.target.value);
+          if (p.onChange) p.onChange(e);
+        }
+      }, rest)),
+      h(Button, { size: "sm", variant: "ghost", className: "k-password__toggle", icon: show[0] ? "eye-off" : "eye", "aria-label": show[0] ? strings.hidePassword : strings.showPassword, "aria-pressed": show[0], onClick: function() {
+        show[1](!show[0]);
+      } })
+    ),
+    level ? h(
+      "div",
+      { id: id + "-strength", className: "k-strength", "aria-live": "polite" },
+      h("span", { className: "k-strength__bars", "aria-hidden": true }, [1, 2, 3, 4].map(function(n) {
+        return h("span", { key: n, className: cx("k-strength__bar", n <= level && "k-strength__bar--" + tones[level]) });
+      })),
+      h("span", { className: "k-strength__word k-strength__word--" + tones[level] }, h("span", { className: "k-sr-only" }, strings.passwordStrength + ": "), words[level])
+    ) : null,
+    note ? h("p", { id: id + "-note", className: "k-field__note" }, p.error ? h(Icon, { name: "info", size: 13 }) : null, note) : null
+  );
+}
+function rangePresets() {
+  var t = fromISODate(toISODate(/* @__PURE__ */ new Date())), iso = toISODate;
+  return [
+    { label: strings.last7, start: iso(addDays(t, -6)), end: iso(t) },
+    { label: strings.last30, start: iso(addDays(t, -29)), end: iso(t) },
+    { label: strings.thisMonth, start: iso(new Date(t.getFullYear(), t.getMonth(), 1)), end: iso(t) },
+    { label: strings.lastMonth, start: iso(new Date(t.getFullYear(), t.getMonth() - 1, 1)), end: iso(new Date(t.getFullYear(), t.getMonth(), 0)) },
+    { label: strings.thisYear, start: iso(new Date(t.getFullYear(), 0, 1)), end: iso(t) }
+  ];
+}
+function formatRange(range) {
+  var s = range && fromISODate(range.start), e = range && fromISODate(range.end);
+  if (!s || !e) return "";
+  return formatDate(s, s.getFullYear() === e.getFullYear() ? { month: "short", day: "numeric" } : { dateStyle: "medium" }) + " \u2013 " + formatDate(e, { dateStyle: "medium" });
+}
+function DateRangePicker(p) {
+  var auto = R.useId(), id = p.id || auto;
+  var st = useControlled(p.value, p.defaultValue || null), v = st[0];
+  var draft = useState2(null), hover = useState2(null), base = useState2(toISODate(/* @__PURE__ */ new Date()));
+  var presets = p.presets || rangePresets(), note = p.error || p.hint;
+  function firstOf(d) {
+    return toISODate(new Date(d.getFullYear(), d.getMonth(), 1));
+  }
+  function opened(open) {
+    if (!open) return;
+    draft[1](null);
+    hover[1](null);
+    var s = fromISODate(v && v.start), t = /* @__PURE__ */ new Date();
+    base[1](firstOf(s || new Date(t.getFullYear(), t.getMonth() - 1, 1)));
+  }
+  function apply(range, close) {
+    st[1](range);
+    if (p.onChange) p.onChange(range);
+    close();
+  }
+  return h(
+    "div",
+    { className: cx("k-field", p.error && "k-field--error", p.className) },
+    p.label ? h("label", { className: "k-field__label", htmlFor: id }, p.label) : null,
+    h(
+      Popover,
+      {
+        className: "k-popover-anchor--block",
+        width: 744,
+        estimateHeight: 340,
+        "aria-label": p.label || strings.chooseRange,
+        onOpenChange: opened,
+        trigger: h(
+          "button",
+          { id, type: "button", disabled: p.disabled, className: cx("k-input k-dd__trigger", !v && "k-dd__trigger--empty"), "aria-label": p.label ? void 0 : p["aria-label"], "aria-describedby": note ? id + "-note" : void 0 },
+          h("span", { className: "k-dd__value" }, v ? formatRange(v) : p.placeholder || strings.chooseRange),
+          h(Icon, { name: "calendar", size: 15, className: "k-dd__chev" })
+        )
+      },
+      function(close) {
+        var left = fromISODate(base[0]), right = new Date(left.getFullYear(), left.getMonth() + 1, 1), d = draft[0];
+        var start = d ? d.start : v && v.start, end = d ? d.end : v && v.end;
+        function pick(iso) {
+          if (!d || d.end) {
+            draft[1]({ start: iso, end: null });
+            return;
+          }
+          var a = d.start, b = iso;
+          if (b < a) {
+            var t = a;
+            a = b;
+            b = t;
+          }
+          apply({ start: a, end: b }, close);
+        }
+        function shift(iso, by) {
+          var x = fromISODate(iso);
+          base[1](firstOf(new Date(x.getFullYear(), x.getMonth() + by, 1)));
+        }
+        var shared = { size: "sm", value: null, rangeStart: start, rangeEnd: d && !d.end ? null : end, hoverDate: d && !d.end ? hover[0] : null, onDayHover: hover[1], onChange: pick, weekStartsOn: p.weekStartsOn };
+        return h(
+          "div",
+          { className: "k-range" },
+          h("div", { className: "k-range__presets" }, presets.map(function(pr) {
+            var on = v && v.start === pr.start && v.end === pr.end;
+            return h("button", { key: pr.label, type: "button", className: cx("k-range__preset", on && "k-range__preset--on"), "aria-pressed": on, onClick: function() {
+              apply({ start: pr.start, end: pr.end }, close);
+            } }, pr.label);
+          })),
+          h(
+            "div",
+            { className: "k-range__months" },
+            h(Calendar, Object.assign({ nav: "prev", autoFocus: true, date: toISODate(left), onDateChange: function(iso) {
+              shift(iso, 0);
+            } }, shared)),
+            h(Calendar, Object.assign({ nav: "next", className: "k-range__second", date: toISODate(right), onDateChange: function(iso) {
+              shift(iso, -1);
+            } }, shared))
+          )
+        );
+      }
+    ),
+    note ? h("p", { id: id + "-note", className: "k-field__note" }, note) : null
+  );
+}
+function parseTime(text) {
+  var t = String(text || "").trim().toLowerCase().replace(/[.\s]/g, ":").replace(/:+/g, ":").replace(/:(am|pm)$/, "$1");
+  if (!t) return null;
+  var m = /^(\d{1,2})(?::?(\d{2}))?(am|pm)?$/.exec(t);
+  if (!m) return void 0;
+  var hh = +m[1], mm = m[2] ? +m[2] : 0;
+  if (m[3] === "pm" && hh < 12) hh += 12;
+  if (m[3] === "am" && hh === 12) hh = 0;
+  return hh > 23 || mm > 59 ? void 0 : pad2(hh) + ":" + pad2(mm);
+}
+function TimePicker(p) {
+  var auto = R.useId(), id = p.id || auto, step = p.step || 15;
+  var st = useControlled(p.value, p.defaultValue || null), v = st[0];
+  var text = useState2(v || ""), open = useState2(false), act = useState2(0);
+  var wrap = R.useRef(null), field = R.useRef(null), list = R.useRef(null), note = p.error || p.hint;
+  var lo = timeToMinutes(p.min || "00:00"), hi = timeToMinutes(p.max || "23:59"), slots = [];
+  for (var m = lo; m <= hi; m += step) slots.push(minutesToTime(m));
+  R.useEffect(function() {
+    if (!open[0]) text[1](v || "");
+  }, [v]);
+  function nearest(t) {
+    var want = timeToMinutes(t);
+    if (want == null) {
+      var now = /* @__PURE__ */ new Date();
+      want = now.getHours() * 60 + now.getMinutes();
+    }
+    var best = 0;
+    slots.forEach(function(s, i) {
+      if (Math.abs(timeToMinutes(s) - want) < Math.abs(timeToMinutes(slots[best]) - want)) best = i;
+    });
+    return best;
+  }
+  function show() {
+    if (p.disabled || open[0]) return;
+    act[1](nearest(v || p.near || "09:00"));
+    open[1](true);
+  }
+  function hide() {
+    open[1](false);
+  }
+  function set(t) {
+    st[1](t);
+    text[1](t || "");
+    if (p.onChange) p.onChange(t);
+  }
+  function commitText() {
+    var t = parseTime(text[0]);
+    if (t === null) set(null);
+    else if (t === void 0) text[1](v || "");
+    else set(t);
+  }
+  var pos = useFloating(open[0], wrap, field, list, function() {
+    hide();
+    commitText();
+  }, 280);
+  R.useEffect(function() {
+    if (open[0]) scrollActiveIntoList(list);
+  }, [open[0], act[0], pos]);
+  function onKey(e) {
+    if (!open[0]) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        show();
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      act[1](Math.min(slots.length - 1, act[0] + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      act[1](Math.max(0, act[0] - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      var typed = parseTime(text[0]);
+      set(typed && typed !== v ? typed : slots[act[0]]);
+      hide();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      text[1](v || "");
+      hide();
+    } else if (e.key === "Tab") {
+      hide();
+      commitText();
+    }
+  }
+  var optionId = function(i) {
+    return id + "-t-" + i;
+  };
+  return h(
+    "div",
+    { ref: wrap, className: cx("k-field", p.error && "k-field--error", p.className) },
+    p.label ? h("label", { className: "k-field__label", htmlFor: id }, p.label) : null,
+    h(
+      "div",
+      { ref: field, className: cx("k-input k-time", open[0] && "k-ms--open") },
+      h("input", {
+        id,
+        name: p.name,
+        className: "k-time__input",
+        value: text[0],
+        placeholder: p.placeholder || "09:00",
+        disabled: p.disabled,
+        autoComplete: "off",
+        inputMode: "numeric",
+        role: "combobox",
+        "aria-expanded": open[0],
+        "aria-controls": id + "-list",
+        "aria-activedescendant": open[0] ? optionId(act[0]) : void 0,
+        "aria-label": p.label ? void 0 : p["aria-label"] || strings.chooseTime,
+        "aria-describedby": note ? id + "-note" : void 0,
+        onFocus: show,
+        onClick: show,
+        onChange: function(e) {
+          text[1](e.target.value);
+          var t = parseTime(e.target.value);
+          if (t) act[1](nearest(t));
+          if (!open[0]) show();
+        },
+        onBlur: function(e) {
+          if (!wrap.current.contains(e.relatedTarget)) {
+            hide();
+            commitText();
+          }
+        },
+        onKeyDown: onKey
+      }),
+      h(Icon, { name: "clock", size: 15, className: "k-dd__chev" })
+    ),
+    note ? h("p", { id: id + "-note", className: "k-field__note" }, p.error ? h(Icon, { name: "info", size: 13 }) : null, note) : null,
+    open[0] && pos ? h(
+      "div",
+      { className: cx("k-menu k-dd__panel", pos.up && "k-dd__panel--up"), style: { left: pos.left, top: pos.top, bottom: pos.bottom, width: Math.max(pos.width, 140) } },
+      h("div", { ref: list, id: id + "-list", role: "listbox", className: "k-dd__list" }, slots.map(function(s, i) {
+        var on = s === v, active = i === act[0];
+        return h(
+          "div",
+          {
+            key: s,
+            id: optionId(i),
+            role: "option",
+            "aria-selected": on,
+            "data-active": active || void 0,
+            className: cx("k-menu__item k-dd__option", active && "k-menu__item--active"),
+            onMouseMove: function() {
+              if (!active) act[1](i);
+            },
+            onMouseDown: function(e) {
+              e.preventDefault();
+            },
+            onClick: function() {
+              set(s);
+              hide();
+            }
+          },
+          h("span", { className: "k-menu__check" }, on ? h(Icon, { name: "check", size: 13, weight: 2.5 }) : null),
+          h("span", { className: "k-menu__label k-time__slot" }, s)
+        );
+      }))
+    ) : null
+  );
+}
+function Combobox(p) {
+  var auto = R.useId(), id = p.id || auto, debounce = p.debounce != null ? p.debounce : 250, minChars = p.minChars != null ? p.minChars : 1;
+  var st = useControlled(p.value, p.defaultValue || null), v = st[0];
+  var text = useState2(v ? v.label : ""), open = useState2(false), results = useState2([]), status = useState2("idle"), act = useState2(0);
+  var wrap = R.useRef(null), field = R.useRef(null), input = R.useRef(null), list = R.useRef(null), req = R.useRef(0), timer = R.useRef(null);
+  var note = p.error || p.hint;
+  R.useEffect(function() {
+    if (!open[0]) text[1](v ? v.label : "");
+  }, [v]);
+  R.useEffect(function() {
+    return function() {
+      clearTimeout(timer.current);
+    };
+  }, []);
+  function search(q) {
+    clearTimeout(timer.current);
+    if (q.trim().length < minChars) {
+      req.current++;
+      results[1](p.defaultOptions || []);
+      status[1](p.defaultOptions ? "done" : "idle");
+      return;
+    }
+    status[1]("loading");
+    var n = ++req.current;
+    timer.current = setTimeout(function() {
+      Promise.resolve().then(function() {
+        return p.loadOptions(q);
+      }).then(function(found) {
+        if (n !== req.current) return;
+        results[1](found || []);
+        status[1]("done");
+        act[1](0);
+      }, function() {
+        if (n === req.current) status[1]("error");
+      });
+    }, debounce);
+  }
+  function show() {
+    if (p.disabled || open[0]) return;
+    open[1](true);
+    search(text[0] === (v ? v.label : "") ? "" : text[0]);
+  }
+  function hide() {
+    open[1](false);
+    text[1](v ? v.label : "");
+  }
+  function set(o) {
+    st[1](o);
+    if (p.onChange) p.onChange(o);
+    text[1](o ? o.label : "");
+  }
+  function pick(o) {
+    if (!o) return;
+    set(o);
+    open[1](false);
+  }
+  var pos = useFloating(open[0], wrap, field, list, hide, 280);
+  R.useEffect(function() {
+    if (open[0]) scrollActiveIntoList(list);
+  }, [act[0], open[0]]);
+  var options = results[0] || [], active = open[0] && status[0] === "done" ? options[act[0]] : null;
+  function onKey(e) {
+    if (!open[0]) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        show();
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      act[1](Math.min(options.length - 1, act[0] + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      act[1](Math.max(0, act[0] - 1));
+    } else if (e.key === "Enter") {
+      if (active) {
+        e.preventDefault();
+        pick(active);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      hide();
+    } else if (e.key === "Tab") hide();
+  }
+  var optionId = function(i) {
+    return id + "-c-" + i;
+  };
+  var body = status[0] === "loading" ? h("div", { className: "k-dd__status" }, h(Spinner, { size: 14 }), strings.searching) : status[0] === "error" ? h("div", { className: "k-dd__status k-dd__status--error" }, strings.loadFailed, h(Button, { size: "sm", variant: "ghost", onClick: function() {
+    search(text[0]);
+  } }, strings.tryAgain)) : status[0] === "idle" ? h("p", { className: "k-dd__empty" }, strings.typeToSearch) : options.length === 0 ? h("p", { className: "k-dd__empty" }, strings.noResults + ' "' + text[0] + '"') : options.map(function(o, i) {
+    var on = v && v.value === o.value, isActive = i === act[0];
+    return h(
+      "div",
+      {
+        key: String(o.value),
+        id: optionId(i),
+        role: "option",
+        "aria-selected": !!on,
+        "data-active": isActive || void 0,
+        className: cx("k-menu__item k-dd__option", isActive && "k-menu__item--active"),
+        onMouseMove: function() {
+          if (!isActive) act[1](i);
+        },
+        onMouseDown: function(e) {
+          e.preventDefault();
+        },
+        onClick: function() {
+          pick(o);
+        }
+      },
+      h("span", { className: "k-menu__check" }, on ? h(Icon, { name: "check", size: 13, weight: 2.5 }) : null),
+      o.avatar ? h(Avatar, { name: o.avatar, size: "sm" }) : o.icon ? h(Icon, { name: o.icon, size: 14 }) : null,
+      h("span", { className: "k-menu__label" }, o.label, o.description ? h("span", { className: "k-dd__desc" }, o.description) : null)
+    );
+  });
+  return h(
+    "div",
+    { ref: wrap, className: cx("k-field", p.error && "k-field--error", p.className) },
+    p.label ? h("label", { className: "k-field__label", htmlFor: id }, p.label) : null,
+    h(
+      "div",
+      { ref: field, className: cx("k-input k-combo", open[0] && "k-ms--open") },
+      h(Icon, { name: "search", size: 15, className: "k-combo__icon" }),
+      h("input", {
+        ref: input,
+        id,
+        className: "k-combo__input",
+        value: text[0],
+        placeholder: p.placeholder || strings.typeToSearch,
+        disabled: p.disabled,
+        autoComplete: "off",
+        role: "combobox",
+        "aria-expanded": open[0],
+        "aria-controls": id + "-list",
+        "aria-autocomplete": "list",
+        "aria-activedescendant": active ? optionId(act[0]) : void 0,
+        "aria-busy": status[0] === "loading" || void 0,
+        "aria-label": p.label ? void 0 : p["aria-label"],
+        "aria-describedby": note ? id + "-note" : void 0,
+        onFocus: show,
+        onChange: function(e) {
+          text[1](e.target.value);
+          if (!open[0]) open[1](true);
+          search(e.target.value);
+          act[1](0);
+        },
+        onKeyDown: onKey
+      }),
+      v ? h("button", {
+        type: "button",
+        className: "k-combo__clear",
+        "aria-label": strings.clear,
+        onMouseDown: function(e) {
+          e.preventDefault();
+        },
+        onClick: function() {
+          set(null);
+          if (input.current) input.current.focus();
+        }
+      }, h(Icon, { name: "xmark", size: 13, weight: 2.5 })) : null
+    ),
+    p.name ? h("input", { type: "hidden", name: p.name, value: v ? v.value : "" }) : null,
+    note ? h("p", { id: id + "-note", className: "k-field__note" }, p.error ? h(Icon, { name: "info", size: 13 }) : null, note) : null,
+    open[0] && pos ? h(
+      "div",
+      { className: cx("k-menu k-dd__panel", pos.up && "k-dd__panel--up"), style: { left: pos.left, top: pos.top, bottom: pos.bottom, width: pos.width } },
+      h("div", { ref: list, id: id + "-list", role: "listbox", className: "k-dd__list", "aria-live": "polite" }, body)
+    ) : null
+  );
+}
 function compactNumber(n) {
   try {
     return new Intl.NumberFormat(strings.locale, { notation: "compact", maximumFractionDigits: 1 }).format(n);
@@ -2163,7 +3274,7 @@ function useWidth() {
   return [ref, st[0]];
 }
 function chartSeries(p) {
-  return (p.series && p.series.length ? p.series : [{ key: "value", label: p["aria-label"] || "Value" }]).slice(0, 2);
+  return (p.series && p.series.length ? p.series : [{ key: "value", label: p["aria-label"] || "Value" }]).slice(0, p.stacked ? 4 : 2);
 }
 function ChartLegend(p) {
   if (p.series.length < 2) return null;
@@ -2208,6 +3319,9 @@ function ChartTip(p) {
 function useChartFrame(p, width) {
   var data = p.data || [], series = chartSeries(p), height = p.height || 240;
   var max = data.reduce(function(m, d) {
+    if (p.stacked) return Math.max(m, series.reduce(function(sum, s) {
+      return sum + (+d[s.key] || 0);
+    }, 0));
     return series.reduce(function(n, s) {
       return Math.max(n, +d[s.key] || 0);
     }, m);
@@ -2305,8 +3419,9 @@ function barPath(x, y, w, base) {
 function BarChart(p) {
   var w = useWidth(), width = w[1], hover = useState2(null);
   var f = useChartFrame(p, width), data = f.data, n = data.length || 1, s = f.series.length, fmt = p.format || compactNumber;
-  var band = f.iw / n, gap = 2;
-  var barW = Math.max(2, Math.min(24, (band * 0.64 - (s - 1) * gap) / s)), groupW = s * barW + (s - 1) * gap;
+  var band = f.iw / n, gap = 2, stacked = !!p.stacked;
+  var barW = stacked ? Math.max(2, Math.min(24, band * 0.64)) : Math.max(2, Math.min(24, (band * 0.64 - (s - 1) * gap) / s));
+  var groupW = stacked ? barW : s * barW + (s - 1) * gap;
   var base = f.pad + f.ih, at = hover[0] && hover[0].index < data.length ? hover[0] : null;
   return h(
     "figure",
@@ -2336,7 +3451,21 @@ function BarChart(p) {
                 hover[1]({ index: i, x: f.left + i * band + band / 2, y: f.pad });
               }
             }),
-            f.series.map(function(ser, j) {
+            stacked ? function() {
+              var sum = 0, bottom = base, top = -1, segs = [];
+              f.series.forEach(function(ser, j) {
+                if ((+d[ser.key] || 0) > 0) top = j;
+              });
+              f.series.forEach(function(ser, j) {
+                var v = +d[ser.key] || 0;
+                if (v <= 0) return;
+                sum += v;
+                var y = f.y(sum), bot = segs.length ? bottom - gap : bottom;
+                if (bot - y >= 1) segs.push(h("path", { key: ser.key, className: cx("k-chart__bar", "k-chart__bar--" + (j + 1)), d: j === top ? barPath(gx, y, barW, bot) : "M" + gx + "," + bot + "V" + y + "H" + (gx + barW) + "V" + bot + "Z" }));
+                bottom = y;
+              });
+              return segs;
+            }() : f.series.map(function(ser, j) {
               return h("path", { key: ser.key, className: cx("k-chart__bar", "k-chart__bar--" + (j + 1)), d: barPath(gx + j * (barW + gap), f.y(d[ser.key]), barW, base) });
             }),
             i % f.labelEvery ? null : h("text", { className: "k-chart__axis", x: f.left + i * band + band / 2, y: base + 18, textAnchor: "middle" }, d.label)
@@ -2539,6 +3668,12 @@ function Calendar(p) {
     });
     var tabbable = focusInView ? focus[0] : toISODate(new Date(cursor.getFullYear(), cursor.getMonth(), 1));
     var max = p.maxEvents || 3;
+    var rs = p.rangeStart || null, re = p.rangeEnd || rs && p.hoverDate || null;
+    if (rs && re && re < rs) {
+      var swap = rs;
+      rs = re;
+      re = swap;
+    }
     title = formatDate(cursor, { month: "long", year: "numeric" });
     content = [
       h("div", { key: "w", className: "k-cal__weekdays", "aria-hidden": true }, days.slice(0, 7).map(function(d, i) {
@@ -2548,15 +3683,19 @@ function Calendar(p) {
         var iso = toISODate(d), out = d.getMonth() !== cursor.getMonth(), evs = byDay[iso] || [];
         var cls = cx("k-cal__day", out && "k-cal__day--out", iso === todayISO && "k-cal__day--today", iso === selected && "k-cal__day--selected", menuData && menuData.date === iso && !menuData.event && "k-cal__day--menu");
         if (small) {
+          var ranged = cx(cls, rs && re && iso > rs && iso < re && "k-cal__day--in-range", iso === rs && "k-cal__day--range-start", iso === re && "k-cal__day--range-end");
           return h(
             "button",
             {
               key: iso,
               type: "button",
-              className: cls,
+              className: ranged,
               "data-date": iso,
               role: "gridcell",
               tabIndex: iso === tabbable ? 0 : -1,
+              onMouseEnter: p.onDayHover ? function() {
+                p.onDayHover(iso);
+              } : void 0,
               "aria-selected": iso === selected,
               "aria-label": formatDate(d, { dateStyle: "full" }),
               onClick: function() {
@@ -2722,10 +3861,10 @@ function Calendar(p) {
           setCursor(t);
           focus[1](todayISO);
         } }, strings.today),
-        h(Button, { size: "sm", variant: "ghost", icon: "chevron-left", "aria-label": strings["previous" + (view === "month" ? "Month" : view === "week" ? "Week" : "Day")], onClick: function() {
+        p.nav === "next" || p.nav === "none" ? null : h(Button, { size: "sm", variant: "ghost", icon: "chevron-left", "aria-label": strings["previous" + (view === "month" ? "Month" : view === "week" ? "Week" : "Day")], onClick: function() {
           step(-1);
         } }),
-        h(Button, { size: "sm", variant: "ghost", icon: "chevron-right", "aria-label": strings["next" + (view === "month" ? "Month" : view === "week" ? "Week" : "Day")], onClick: function() {
+        p.nav === "prev" || p.nav === "none" ? null : h(Button, { size: "sm", variant: "ghost", icon: "chevron-right", "aria-label": strings["next" + (view === "month" ? "Month" : view === "week" ? "Week" : "Day")], onClick: function() {
           step(1);
         } })
       )
@@ -2829,6 +3968,603 @@ function DatePicker(p) {
     } })) : null
   );
 }
+function DonutChart(p) {
+  var all = (p.data || []).filter(function(d) {
+    return +d.value > 0;
+  }), data = all;
+  if (all.length > 5) {
+    var rest = all.slice(4).reduce(function(a, d) {
+      return a + +d.value;
+    }, 0);
+    data = all.slice(0, 4).concat([{ label: strings.other, value: rest }]);
+  }
+  var total = data.reduce(function(a, d) {
+    return a + +d.value;
+  }, 0) || 1;
+  var size = p.size || 176, thick = p.thickness || 22, R0 = size / 2, r0 = R0 - thick, hover = useState2(null);
+  var fmt = p.format || function(v) {
+    return Number(v).toLocaleString(strings.locale);
+  };
+  var pct = function(v) {
+    return Math.round(v / total * 100) + "%";
+  };
+  function pt(r, a) {
+    return (R0 + r * Math.cos(a)).toFixed(2) + "," + (R0 + r * Math.sin(a)).toFixed(2);
+  }
+  function arc(a0, a1) {
+    if (a1 - a0 >= Math.PI * 2 - 1e-6) a1 = a0 + Math.PI * 2 - 1e-4;
+    var large = a1 - a0 > Math.PI ? 1 : 0;
+    return "M" + pt(R0, a0) + "A" + R0 + "," + R0 + " 0 " + large + " 1 " + pt(R0, a1) + "L" + pt(r0, a1) + "A" + r0 + "," + r0 + " 0 " + large + " 0 " + pt(r0, a0) + "Z";
+  }
+  var angle = -Math.PI / 2, active = hover[0] != null ? data[hover[0]] : null;
+  return h(
+    "figure",
+    { className: cx("k-donut", p.className), "aria-label": p["aria-label"] },
+    h(
+      "div",
+      { className: "k-donut__chart", style: { width: size, height: size } },
+      h(
+        "svg",
+        { width: size, height: size, viewBox: "0 0 " + size + " " + size, "aria-hidden": true, onMouseLeave: function() {
+          hover[1](null);
+        } },
+        data.map(function(d, i) {
+          var a0 = angle, a1 = angle + +d.value / total * Math.PI * 2;
+          angle = a1;
+          return h("path", { key: d.label, d: arc(a0, a1), className: cx("k-donut__seg", "k-donut__seg--" + (i + 1), hover[0] != null && hover[0] !== i && "k-donut__seg--dim"), onMouseEnter: function() {
+            hover[1](i);
+          } });
+        })
+      ),
+      h(
+        "div",
+        { className: "k-donut__center", "aria-hidden": true },
+        h("span", { className: "k-donut__value" }, fmt(active ? active.value : total)),
+        h("span", { className: "k-donut__label" }, active ? active.label : p.centerLabel || strings.total)
+      )
+    ),
+    h("ul", { className: "k-donut__legend" }, data.map(function(d, i) {
+      return h(
+        "li",
+        { key: d.label, className: cx("k-donut__item", hover[0] === i && "k-donut__item--on"), onMouseEnter: function() {
+          hover[1](i);
+        }, onMouseLeave: function() {
+          hover[1](null);
+        } },
+        h("span", { className: "k-donut__key k-donut__key--" + (i + 1) }),
+        h("span", { className: "k-donut__name" }, d.label),
+        h("span", { className: "k-donut__num" }, fmt(d.value)),
+        h("span", { className: "k-donut__pct" }, pct(d.value))
+      );
+    }))
+  );
+}
+function Heatmap(p) {
+  var weeks = p.weeks || 53, weekStart = p.weekStartsOn != null ? p.weekStartsOn : 1, cell = 11, step = 14;
+  var end = fromISODate(p.end) || fromISODate(toISODate(/* @__PURE__ */ new Date()));
+  var start = addDays(addDays(end, -((end.getDay() - weekStart + 7) % 7)), -(weeks - 1) * 7);
+  var values = p.data || {}, hover = useState2(null), fmt = p.format || function(v2) {
+    return String(v2);
+  };
+  var max = Object.keys(values).reduce(function(m, k) {
+    return Math.max(m, +values[k] || 0);
+  }, 0) || 1;
+  var level = function(v2) {
+    return !v2 ? 0 : Math.min(4, Math.max(1, Math.ceil(v2 / max * 4)));
+  };
+  var left = 30, top = 18, cells = [], months = [], total = 0, lastMonth = -1, lastLabel = -9;
+  for (var w = 0; w < weeks; w++) {
+    var first = addDays(start, w * 7);
+    if (first.getMonth() !== lastMonth) {
+      if (w - lastLabel >= 3) {
+        months.push(h("text", { key: "m" + w, className: "k-chart__axis", x: left + w * step, y: 11 }, formatDate(first, { month: "short" })));
+        lastLabel = w;
+      }
+      lastMonth = first.getMonth();
+    }
+    for (var d = 0; d < 7; d++) {
+      var day = addDays(start, w * 7 + d);
+      if (day > end) continue;
+      var iso = toISODate(day), v = +values[iso] || 0;
+      total += v;
+      cells.push(h("rect", {
+        key: iso,
+        className: "k-heat__cell k-heat__l" + level(v),
+        x: left + w * step,
+        y: top + d * step,
+        width: cell,
+        height: cell,
+        rx: 2,
+        onMouseEnter: /* @__PURE__ */ function(iso2, v2, x, y) {
+          return function() {
+            hover[1]({ iso: iso2, v: v2, x, y });
+          };
+        }(iso, v, left + w * step + cell / 2, top + d * step)
+      }));
+    }
+  }
+  var days = [0, 2, 4].map(function(d2) {
+    return h("text", { key: "d" + d2, className: "k-chart__axis", x: 0, y: top + d2 * step + 9 }, formatDate(addDays(start, d2), { weekday: "short" }));
+  });
+  var at = hover[0], width = left + weeks * step;
+  return h(
+    "figure",
+    { className: cx("k-heat", p.className) },
+    h(
+      "div",
+      { className: "k-heat__scroll" },
+      h(
+        "div",
+        { className: "k-heat__plot", style: { width } },
+        h("svg", { width, height: top + 7 * step, role: "img", "aria-label": (p["aria-label"] ? p["aria-label"] + ": " : "") + fmt(total) + " \xB7 " + weeks + " " + strings.week.toLowerCase() + "s", onMouseLeave: function() {
+          hover[1](null);
+        } }, months, days, cells),
+        at ? h(
+          "div",
+          { className: "k-chart__tip k-chart__tip--center", style: { left: at.x, top: at.y } },
+          h("p", { className: "k-chart__tip-title" }, fmt(at.v)),
+          h("p", { className: "k-chart__tip-row" }, formatDate(fromISODate(at.iso), { dateStyle: "medium" }))
+        ) : null
+      )
+    ),
+    h(
+      "div",
+      { className: "k-heat__legend", "aria-hidden": true },
+      strings.less,
+      [0, 1, 2, 3, 4].map(function(l) {
+        return h("span", { key: l, className: "k-heat__swatch k-heat__l" + l });
+      }),
+      strings.moreLabel
+    )
+  );
+}
+function peopleNames(people) {
+  return (people || []).map(function(x) {
+    return typeof x === "string" ? x : x.name;
+  });
+}
+function renderInline(text, names, keyBase) {
+  var out = [], re = /(\*\*[^*\n]+\*\*|_[^_\n]+_|`[^`\n]+`|\[[^\]\n]+\]\((?:https?:\/\/|mailto:)[^)\s]+\)|@[^\s@][^@\n]*)/g, last = 0, m, k = 0;
+  while (m = re.exec(text)) {
+    var tok = m[0], at = m.index;
+    if (tok.charAt(0) === "@") {
+      var name = names.filter(function(n) {
+        return tok.slice(1, n.length + 1) === n;
+      }).sort(function(a, b) {
+        return b.length - a.length;
+      })[0];
+      if (!name) {
+        re.lastIndex = at + 1;
+        continue;
+      }
+      if (at > last) out.push(text.slice(last, at));
+      out.push(h("span", { key: keyBase + "-" + k++, className: "k-mention" }, "@" + name));
+      last = re.lastIndex = at + name.length + 1;
+      continue;
+    }
+    if (at > last) out.push(text.slice(last, at));
+    var key = keyBase + "-" + k++;
+    if (tok.slice(0, 2) === "**") out.push(h("strong", { key }, tok.slice(2, -2)));
+    else if (tok.charAt(0) === "_") out.push(h("em", { key }, tok.slice(1, -1)));
+    else if (tok.charAt(0) === "`") out.push(h("code", { key, className: "k-md__code" }, tok.slice(1, -1)));
+    else {
+      var lm = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(tok);
+      out.push(h("a", { key, href: lm[2], target: "_blank", rel: "noopener noreferrer" }, lm[1]));
+    }
+    last = at + tok.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+function Markdown(p) {
+  var names = peopleNames(p.people), lines = String(p.children != null ? p.children : p.text || "").replace(/\r/g, "").split("\n"), blocks = [], i = 0;
+  var isList = function(l) {
+    return /^\s*[-*] /.test(l);
+  }, isNum = function(l) {
+    return /^\s*\d+[.)] /.test(l);
+  }, isQuote = function(l) {
+    return /^> ?/.test(l);
+  };
+  while (i < lines.length) {
+    var line = lines[i], k = "b" + blocks.length, items = [];
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+    if (isList(line) || isNum(line)) {
+      var numbered = isNum(line);
+      while (i < lines.length && (numbered ? isNum(lines[i]) : isList(lines[i]))) {
+        items.push(lines[i].replace(/^\s*([-*]|\d+[.)]) /, ""));
+        i++;
+      }
+      blocks.push(h(numbered ? "ol" : "ul", { key: k }, items.map(function(t, j) {
+        return h("li", { key: j }, renderInline(t, names, k + j));
+      })));
+      continue;
+    }
+    if (isQuote(line)) {
+      while (i < lines.length && isQuote(lines[i])) {
+        items.push(lines[i].replace(/^> ?/, ""));
+        i++;
+      }
+      blocks.push(h("blockquote", { key: k }, items.map(function(t, j) {
+        return [j ? h("br", { key: "r" + j }) : null, renderInline(t, names, k + j)];
+      })));
+      continue;
+    }
+    while (i < lines.length && lines[i].trim() && !isList(lines[i]) && !isNum(lines[i]) && !isQuote(lines[i])) {
+      items.push(lines[i]);
+      i++;
+    }
+    blocks.push(h("p", { key: k }, items.map(function(t, j) {
+      return [j ? h("br", { key: "r" + j }) : null, renderInline(t, names, k + j)];
+    })));
+  }
+  return h("div", { className: cx("k-md", p.className) }, blocks);
+}
+function useMentions(ref, value, setValue, people) {
+  var names = peopleNames(people), st = useState2(null), act = useState2(0);
+  function check() {
+    var el = ref.current;
+    if (!el || !names.length) return;
+    var caret = el.selectionStart, m = /(^|\s)@([^\s@]{0,24})$/.exec(el.value.slice(0, caret));
+    if (!m) {
+      if (st[0]) st[1](null);
+      return;
+    }
+    var r = el.getBoundingClientRect();
+    st[1]({ start: caret - m[2].length - 1, end: caret, query: m[2].toLowerCase(), left: r.left, top: r.bottom + 6 });
+    act[1](0);
+  }
+  var q = st[0] && st[0].query;
+  var matches = st[0] ? names.filter(function(n) {
+    var l = n.toLowerCase();
+    return l.indexOf(q) === 0 || l.split(" ").some(function(w) {
+      return w.indexOf(q) === 0;
+    });
+  }).slice(0, 6) : [];
+  function insert(name) {
+    var el = ref.current, m = st[0], pos = m.start + name.length + 2;
+    setValue(value.slice(0, m.start) + "@" + name + " " + value.slice(m.end));
+    st[1](null);
+    setTimeout(function() {
+      if (el) {
+        el.focus();
+        el.setSelectionRange(pos, pos);
+      }
+    }, 0);
+  }
+  function onKeyDown(e) {
+    if (!st[0] || !matches.length) return false;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      act[1]((act[0] + 1) % matches.length);
+      return true;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      act[1]((act[0] - 1 + matches.length) % matches.length);
+      return true;
+    }
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      insert(matches[act[0]]);
+      return true;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      st[1](null);
+      return true;
+    }
+    return false;
+  }
+  var list = st[0] && matches.length ? h("div", { className: "k-menu k-mention-list", role: "listbox", style: { left: st[0].left, top: st[0].top } }, matches.map(function(n, i) {
+    return h(
+      "div",
+      {
+        key: n,
+        role: "option",
+        "aria-selected": i === act[0],
+        className: cx("k-menu__item k-dd__option", i === act[0] && "k-menu__item--active"),
+        onMouseDown: function(e) {
+          e.preventDefault();
+          insert(n);
+        },
+        onMouseMove: function() {
+          if (act[0] !== i) act[1](i);
+        }
+      },
+      h(Avatar, { name: n, size: "sm" }),
+      h("span", { className: "k-menu__label" }, n)
+    );
+  })) : null;
+  return { check, onKeyDown, list, close: function() {
+    st[1](null);
+  } };
+}
+function MarkdownEditor(p) {
+  var auto = R.useId(), id = p.id || auto, ta = R.useRef(null);
+  var st = useControlled(p.value, p.defaultValue || ""), v = st[0] || "", tab = useState2("write");
+  function set(next) {
+    st[1](next);
+    if (p.onChange) p.onChange(next);
+  }
+  var mentions = useMentions(ta, v, set, p.people);
+  var mod = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || "") ? "\u2318" : "Ctrl+";
+  function surround(before, after, filler) {
+    var el = ta.current;
+    if (!el) return;
+    var a = el.selectionStart, b = el.selectionEnd, sel = v.slice(a, b) || filler;
+    set(v.slice(0, a) + before + sel + after + v.slice(b));
+    setTimeout(function() {
+      el.focus();
+      el.setSelectionRange(a + before.length, a + before.length + sel.length);
+    }, 0);
+  }
+  function bullets() {
+    var el = ta.current;
+    if (!el) return;
+    var a = v.lastIndexOf("\n", el.selectionStart - 1) + 1, b = el.selectionEnd;
+    var block = v.slice(a, b).split("\n").map(function(l) {
+      return /^- /.test(l) ? l : "- " + l;
+    }).join("\n");
+    set(v.slice(0, a) + block + v.slice(b));
+    setTimeout(function() {
+      el.focus();
+      el.setSelectionRange(a + block.length, a + block.length);
+    }, 0);
+  }
+  var tools = [
+    { icon: "bold", label: strings.bold, key: "b", run: function() {
+      surround("**", "**", strings.bold.toLowerCase());
+    } },
+    { icon: "italic", label: strings.italic, key: "i", run: function() {
+      surround("_", "_", strings.italic.toLowerCase());
+    } },
+    { icon: "list", label: strings.list, run: bullets },
+    { icon: "link", label: strings.link, key: "k", run: function() {
+      surround("[", "](https://)", strings.link.toLowerCase());
+    } },
+    { icon: "code", label: strings.code, run: function() {
+      surround("`", "`", strings.code.toLowerCase());
+    } }
+  ];
+  var note = p.error || p.hint;
+  return h(
+    "div",
+    { className: cx("k-field k-mdeditor", p.error && "k-field--error", p.className) },
+    h(
+      "div",
+      { className: "k-mdeditor__head" },
+      p.label ? h("label", { className: "k-field__label", htmlFor: id }, p.label) : h("span"),
+      h(
+        "div",
+        { className: "k-mdeditor__tools" },
+        tab[0] === "write" ? tools.map(function(t) {
+          return h(
+            Tooltip,
+            { key: t.icon, content: t.label, shortcut: t.key ? mod + t.key.toUpperCase() : void 0 },
+            h(Button, { size: "sm", variant: "ghost", icon: t.icon, "aria-label": t.label, onMouseDown: function(e) {
+              e.preventDefault();
+            }, onClick: t.run })
+          );
+        }) : null,
+        h(SegmentedControl, { "aria-label": p.label || strings.write, value: tab[0], onChange: tab[1], options: [{ value: "write", label: strings.write }, { value: "preview", label: strings.preview }] })
+      )
+    ),
+    tab[0] === "write" ? h("textarea", {
+      ref: ta,
+      id,
+      className: "k-input k-textarea k-mdeditor__input",
+      rows: p.rows || 6,
+      value: v,
+      placeholder: p.placeholder,
+      maxLength: p.maxLength,
+      "aria-describedby": note ? id + "-note" : void 0,
+      onChange: function(e) {
+        set(e.target.value);
+        mentions.check();
+      },
+      onKeyDown: function(e) {
+        if (mentions.onKeyDown(e)) return;
+        if (e.metaKey || e.ctrlKey) {
+          var t = tools.filter(function(x) {
+            return x.key && x.key === e.key.toLowerCase();
+          })[0];
+          if (t) {
+            e.preventDefault();
+            t.run();
+          }
+        }
+      },
+      onKeyUp: function(e) {
+        if (e.key !== "ArrowDown" && e.key !== "ArrowUp") mentions.check();
+      },
+      onClick: mentions.check,
+      onBlur: function() {
+        setTimeout(mentions.close, 120);
+      }
+    }) : h(
+      "div",
+      { className: "k-mdeditor__preview", style: { minHeight: (p.rows || 6) * 20 + 20 } },
+      v.trim() ? h(Markdown, { people: p.people }, v) : h("p", { className: "k-mdeditor__empty" }, strings.nothingToPreview)
+    ),
+    note ? h("p", { id: id + "-note", className: "k-field__note" }, p.error ? h(Icon, { name: "info", size: 13 }) : null, note) : null,
+    mentions.list
+  );
+}
+function CommentThread(p) {
+  var draft = useState2(""), ta = R.useRef(null), names = peopleNames(p.people), comments = p.comments || [];
+  var mentions = useMentions(ta, draft[0], draft[1], p.people);
+  var mod = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || "") ? "\u2318" : "Ctrl";
+  function submit() {
+    var body = draft[0].trim();
+    if (!body) return;
+    if (p.onSubmit) p.onSubmit(body, names.filter(function(n) {
+      return body.indexOf("@" + n) >= 0;
+    }));
+    draft[1]("");
+    mentions.close();
+  }
+  return h(
+    "div",
+    { className: cx("k-comments", p.className) },
+    comments.length ? h("ol", { className: "k-comments__list" }, comments.map(function(c) {
+      return h(
+        "li",
+        { key: c.id, className: "k-comment" },
+        h(Avatar, { name: c.author, size: "sm" }),
+        h(
+          "div",
+          { className: "k-comment__main" },
+          h("p", { className: "k-comment__meta" }, h("strong", null, c.author), c.time ? h("span", null, c.time) : null),
+          h(Markdown, { people: p.people, className: "k-comment__body" }, c.body)
+        )
+      );
+    })) : h("p", { className: "k-comments__empty" }, strings.noComments),
+    h(
+      "div",
+      { className: "k-comments__composer" },
+      p.currentUser ? h(Avatar, { name: p.currentUser, size: "sm" }) : null,
+      h(
+        "div",
+        { className: "k-comments__field" },
+        h("textarea", {
+          ref: ta,
+          className: "k-input k-textarea k-comments__input",
+          rows: 2,
+          value: draft[0],
+          placeholder: p.placeholder || strings.writeComment,
+          "aria-label": p.placeholder || strings.writeComment,
+          onChange: function(e) {
+            draft[1](e.target.value);
+            mentions.check();
+          },
+          onKeyDown: function(e) {
+            if (mentions.onKeyDown(e)) return;
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              submit();
+            }
+          },
+          onKeyUp: function(e) {
+            if (e.key !== "ArrowDown" && e.key !== "ArrowUp") mentions.check();
+          },
+          onClick: mentions.check,
+          onBlur: function() {
+            setTimeout(mentions.close, 120);
+          }
+        }),
+        h(
+          "div",
+          { className: "k-comments__actions" },
+          h("span", { className: "k-comments__hint" }, h(Kbd, null, mod), h(Kbd, null, "Enter"), " " + strings.toSend),
+          h(Button, { size: "sm", variant: "secondary", icon: "send", disabled: !draft[0].trim(), onClick: submit }, strings.comment)
+        )
+      )
+    ),
+    mentions.list
+  );
+}
+function Gantt(p) {
+  var items = p.items || [], dayMs = 864e5, scroller = R.useRef(null);
+  var diff = function(a, b) {
+    return Math.round((fromISODate(b) - fromISODate(a)) / dayMs);
+  };
+  var starts = items.map(function(it) {
+    return it.start;
+  }).sort(), ends = items.map(function(it) {
+    return it.end || it.start;
+  }).sort();
+  var todayISO = toISODate(/* @__PURE__ */ new Date());
+  var from = p.from || (starts.length ? toISODate(addDays(fromISODate(starts[0] < todayISO ? starts[0] : todayISO), -3)) : todayISO);
+  var to = p.to || (ends.length ? toISODate(addDays(fromISODate(ends[ends.length - 1] > todayISO ? ends[ends.length - 1] : todayISO), 7)) : todayISO);
+  var days = diff(from, to) + 1;
+  var dayW = p.scale === "day" ? 32 : p.scale === "week" ? 12 : days > 120 ? 12 : 28;
+  var width = days * dayW, labelW = p.labelWidth || 220, start = fromISODate(from);
+  var rows = [], groups = [];
+  items.forEach(function(it) {
+    if (it.group && groups.indexOf(it.group) < 0) groups.push(it.group);
+  });
+  if (groups.length) groups.forEach(function(g) {
+    rows.push({ group: g });
+    items.forEach(function(it) {
+      if (it.group === g) rows.push({ item: it });
+    });
+  });
+  items.forEach(function(it) {
+    if (!it.group) rows.push({ item: it });
+  });
+  var months = [], ticks = [];
+  for (var d = 0; d < days; d++) {
+    var day = addDays(start, d);
+    if (d === 0 || day.getDate() === 1) months.push(h("span", { key: "m" + d, className: "k-gantt__month", style: { left: d * dayW } }, formatDate(day, { month: "long", year: "numeric" })));
+    if (dayW >= 24 || day.getDay() === 1) ticks.push(h("span", { key: "d" + d, className: cx("k-gantt__tick", (day.getDay() === 0 || day.getDay() === 6) && dayW >= 24 && "k-gantt__tick--weekend", toISODate(day) === todayISO && "k-gantt__tick--today"), style: { left: d * dayW, width: dayW >= 24 ? dayW : dayW * 7 } }, day.getDate()));
+  }
+  var todayX = diff(from, todayISO) * dayW + dayW / 2, showToday = todayISO >= from && todayISO <= to;
+  useIsoLayout(function() {
+    if (scroller.current && showToday) scroller.current.scrollLeft = Math.max(0, todayX - 240);
+  }, []);
+  return h(
+    "div",
+    { className: cx("k-gantt", p.className), role: "region", "aria-label": p["aria-label"] },
+    h(
+      "div",
+      { ref: scroller, className: "k-gantt__scroll", style: p.maxHeight ? { maxHeight: p.maxHeight } : void 0 },
+      h(
+        "div",
+        { className: "k-gantt__table", style: { width: labelW + width } },
+        h(
+          "div",
+          { className: "k-gantt__row k-gantt__row--head" },
+          h("div", { className: "k-gantt__name", style: { width: labelW } }),
+          h("div", { className: "k-gantt__track", style: { width } }, h("div", { className: "k-gantt__months" }, months), h("div", { className: "k-gantt__ticks" }, ticks))
+        ),
+        rows.map(function(r, i) {
+          if (r.group) return h(
+            "div",
+            { key: "g" + i, className: "k-gantt__row k-gantt__row--group" },
+            h("div", { className: "k-gantt__name", style: { width: labelW } }, r.group),
+            h("div", { className: "k-gantt__track", style: { width } })
+          );
+          var it = r.item, end = it.end || it.start, left = diff(from, it.start) * dayW, w = (diff(it.start, end) + 1) * dayW;
+          var milestone = it.milestone || false, label = it.label + " \xB7 " + formatDate(fromISODate(it.start), { month: "short", day: "numeric" }) + (end !== it.start ? " \u2013 " + formatDate(fromISODate(end), { month: "short", day: "numeric" }) : "");
+          return h(
+            "div",
+            { key: it.id || i, className: "k-gantt__row" },
+            h(
+              "div",
+              { className: "k-gantt__name", style: { width: labelW } },
+              it.avatar ? h(Avatar, { name: it.avatar, size: "sm" }) : null,
+              h("span", { className: "k-gantt__label" }, it.label)
+            ),
+            h(
+              "div",
+              { className: "k-gantt__track", style: { width } },
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: cx("k-gantt__bar", milestone && "k-gantt__bar--milestone"),
+                  title: label,
+                  "aria-label": label,
+                  style: milestone ? { left: left + dayW / 2 - 7 } : { left: left + 2, width: Math.max(6, w - 4) },
+                  onClick: p.onItemClick ? function() {
+                    p.onItemClick(it);
+                  } : void 0
+                },
+                !milestone && it.progress != null ? h("span", { className: "k-gantt__progress", style: { width: Math.max(0, Math.min(1, it.progress)) * 100 + "%" } }) : null
+              ),
+              h("span", { className: "k-gantt__after", style: { left: milestone ? left + dayW / 2 + 12 : left + w + 6 } }, it.progress != null ? Math.round(it.progress * 100) + "%" : null)
+            )
+          );
+        }),
+        showToday ? h("span", { className: "k-gantt__today", style: { left: labelW + todayX }, "aria-hidden": true }) : null
+      )
+    )
+  );
+}
 export {
   Accordion,
   Avatar,
@@ -2841,27 +4577,39 @@ export {
   Callout,
   Card,
   Checkbox,
+  CodeInput,
+  Combobox,
   CommandPalette,
+  CommentThread,
   ContextMenu,
+  CurrencyField,
   DatePicker,
+  DateRangePicker,
   Dialog,
+  DonutChart,
   Drawer,
   Dropdown,
   EmptyState,
   FileDrop,
+  Gantt,
+  Heatmap,
   Icon,
   Kanban,
   Kbd,
   LineChart,
   List,
   ListRow,
+  Markdown,
+  MarkdownEditor,
   Menu,
   MenuPanel,
   Modal,
   MultiSelect,
   NavList,
   NotificationInbox,
+  NumberField,
   Pagination,
+  PasswordField,
   Popover,
   ProgressBar,
   RadioGroup,
@@ -2881,6 +4629,7 @@ export {
   Tabs,
   TextField,
   Textarea,
+  TimePicker,
   Timeline,
   Toast,
   Toaster,
