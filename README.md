@@ -10,7 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://vweje.github.io/klar/examples/"><strong>Live demo</strong></a> ·
+  <a href="https://klar.vweje.dk"><strong>Website</strong></a> ·
+  <a href="https://klar.vweje.dk/examples/">Live demo</a> ·
   <a href="docs/design-principles.md">Design principles</a> ·
   <a href="docs/patterns.md">Patterns</a> ·
   <a href="docs/components">Components</a>
@@ -206,7 +207,7 @@ setStrings({ search: 'Suchen' }); // or your own texts, any subset
 </script>
 ```
 
-The [live demo](https://vweje.github.io/klar/examples/) is a single HTML file built this way - see [`examples/index.html`](examples/index.html).
+The [live demo](https://klar.vweje.dk/examples/) is a single HTML file built this way - see [`examples/index.html`](examples/index.html).
 
 ## Package exports
 

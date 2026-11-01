@@ -4,7 +4,7 @@
   "description": "A sharp, monochrome design system for React - tokens, 40 components and themes for Tailwind v4 and shadcn/ui.",
   "license": "MIT",
   "author": "Viggo Weje",
-  "homepage": "https://vweje.github.io/klar/examples/",
+  "homepage": "https://klar.vweje.dk",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vweje/klar.git"
