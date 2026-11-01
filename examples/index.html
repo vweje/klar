@@ -43,6 +43,10 @@
     .report-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--space-3); }
     .report-grid > .k-card { min-width: 0; }
     .span-4 { grid-column: span 4; } .span-6 { grid-column: span 6; } .span-8 { grid-column: span 8; }
+    .card { display: flex; flex-direction: column; gap: var(--space-2); }
+    .card__meta { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--text-secondary); }
+    .card__id { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+    .wizard__step { display: flex; flex-direction: column; gap: var(--space-4); padding-top: var(--space-2); animation: k-reveal var(--duration-base) var(--ease-out); }
     .calendar-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-6); align-items: start; }
     .set-narrow { width: 320px; max-width: 100%; }
     .set-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-self: stretch; }
@@ -93,6 +97,24 @@
       { id: 'KL-128', name: 'Write onboarding emails', owner: 'leo', status: 'Due soon', due: isoFromToday(5) },
       { id: 'KL-124', name: 'Audit color contrast', owner: 'ava', status: 'In progress', due: isoFromToday(7) }
     ];
+    var initialMeetings = [
+      { id: 'm1', date: isoFromToday(-2), time: '11:00', end: '11:45', title: 'Retro' },
+      { id: 'm2', date: isoFromToday(1), time: '10:00', end: '11:00', title: 'Design review' },
+      { id: 'm3', date: isoFromToday(1), time: '10:30', end: '11:00', title: '1:1 with Noah' },
+      { id: 'm4', date: isoFromToday(2), time: '14:30', end: '16:00', title: 'Sprint planning' },
+      { id: 'm5', date: isoFromToday(3), time: '13:00', end: '13:30', title: 'Copy review' },
+      { id: 'm6', date: isoFromToday(0), time: '09:00', end: '09:15', title: 'Stand-up' },
+      { id: 'm7', date: isoFromToday(0), time: '15:00', end: '16:30', title: 'Launch rehearsal' },
+      { id: 'm8', date: isoFromToday(8), time: '09:00', end: '10:00', title: 'Client call' },
+      { id: 'm9', date: isoFromToday(15), time: '10:30', end: '12:00', title: 'Quarterly review' }
+    ];
+    var initialNotifications = [
+      { id: 'n1', avatar: 'Mia Larsen', title: 'Mia commented on Fix sign-in redirect', description: '"It loops on Safari after the second login."', time: '5 min ago', taskId: 'KL-131' },
+      { id: 'n2', avatar: 'Noah Bennett', title: 'Noah completed Update pricing page', time: '1 hour ago', taskId: 'KL-139' },
+      { id: 'n3', icon: 'person', title: 'You were assigned Audit color contrast', time: 'Yesterday', read: true, taskId: 'KL-124' },
+      { id: 'n4', icon: 'chart', title: 'Your weekly summary is ready', description: '86 tasks completed this month.', time: 'Monday', read: true }
+    ];
+    var labelOptions = ['Design', 'Frontend', 'Backend', 'Copy', 'Bug', 'Research', 'Marketing'];
     var tone = { 'In progress': 'neutral', 'Done': 'success', 'Overdue': 'danger', 'Due soon': 'warning' };
     var statuses = ['In progress', 'Due soon', 'Done', 'Overdue'];
     var emailNotifications = [
@@ -161,6 +183,11 @@
       var editing = React.useState(null);
       var editorKey = React.useState(0);
       var confirm = React.useState(null);
+      var layout = React.useState('list');
+      var meetings = React.useState(initialMeetings);
+      var notifications = React.useState(initialNotifications);
+      var projects = React.useState([{ id: 'p1', label: 'Website', icon: 'folder', count: 12 }, { id: 'p2', label: 'Mobile app', icon: 'folder', count: 4 }, { id: 'p3', label: 'Archive', icon: 'folder' }]);
+      var wizard = React.useState(false), wizardKey = React.useState(0);
       // Overlays stay rendered with their last content while they animate out.
       var lastEditing = React.useRef(null), lastConfirm = React.useRef(null);
       if (editing[0]) lastEditing.current = editing[0];
@@ -187,7 +214,16 @@
       function openSettings(page) { navigate('settings', page); }
       function setPref(key, value) { prefs[1](function (p) { var n = Object.assign({}, p); n[key] = value; return n; }); }
       function openEditor(task) { editorKey[1](function (k) { return k + 1; }); editing[1](task); }
-      function newTask() { openEditor({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: isoFromToday(14), isNew: true }); }
+      function openWizard() { wizardKey[1](function (k) { return k + 1; }); wizard[1](true); }
+      function moveTask(id, status, index) {
+        var task = tasks[0].filter(function (t) { return t.id === id; })[0], rest = tasks[0].filter(function (t) { return t.id !== id; });
+        var inColumn = rest.filter(function (t) { return t.status === status; }), before = inColumn[index];
+        var at = before ? rest.indexOf(before) : inColumn.length ? rest.indexOf(inColumn[inColumn.length - 1]) + 1 : rest.length;
+        rest.splice(at, 0, Object.assign({}, task, { status: status }));
+        tasks[1](rest);
+        if (task.status !== status) K.toast.success('Moved to ' + status);
+      }
+      function newTask(due) { openEditor({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: typeof due === 'string' ? due : isoFromToday(14), isNew: true }); }
 
       function update(id, patch) { tasks[1](tasks[0].map(function (t) { return t.id === id ? Object.assign({}, t, patch) : t; })); }
       function remove(task) {
@@ -218,7 +254,9 @@
       var overview = h('div', { className: 'inner' },
         h('div', { className: 'head' },
           h('div', null, h('h1', { className: 'k-h1' }, 'Good evening, Ava'), h('p', null, 'You have 3 tasks due this week.')),
-          h(K.SegmentedControl, { options: ['7 days', '30 days', '12 months'], defaultValue: '30 days', 'aria-label': 'Period' })),
+          h('div', { className: 'actions' },
+            h(K.Button, { variant: 'secondary', icon: 'plus', onClick: openWizard }, 'New project'),
+            h(K.SegmentedControl, { options: ['7 days', '30 days', '12 months'], defaultValue: '30 days', 'aria-label': 'Period' }))),
         h('div', { className: 'stats' },
           h(K.Stat, { label: 'Revenue', icon: 'chart', value: '$48,250', delta: '+12.4%', trend: 'up', caption: 'vs. last month' }),
           h(K.Stat, { label: 'Tasks completed', icon: 'circle-check', value: '86', delta: '+18', trend: 'up', caption: 'this month' }),
@@ -230,9 +268,18 @@
               { id: 'mine', label: 'Mine', count: tasks[0].filter(function (t) { return t.owner === 'ava'; }).length },
               { id: 'late', label: 'Overdue', count: tasks[0].filter(function (t) { return t.status === 'Overdue'; }).length }] }),
             h('div', { className: 'actions' },
+              h(K.SegmentedControl, { 'aria-label': 'Layout', value: layout[0], onChange: layout[1], options: [{ value: 'list', label: 'List', icon: 'filter' }, { value: 'board', label: 'Board', icon: 'chart' }] }),
               h(K.Button, { size: 'sm', variant: 'secondary', icon: 'filter' }, 'Filter'),
               h(K.Button, { size: 'sm', variant: 'secondary', icon: 'upload', onClick: function () { K.toast.success({ title: 'Report exported', description: 'Sent to your email.' }); } }, 'Export'))),
-          visible.length ? h(K.Table, { onRowClick: function (r) { openEditor(r); }, rowMenu: rowMenu, columns: [
+          layout[0] === 'board' ? h(K.Kanban, { onMove: moveTask, onCardClick: function (t) { openEditor(t); },
+            columns: statuses.map(function (s) { return { id: s, title: s, items: visible.filter(function (t) { return t.status === s; }) }; }),
+            renderCard: function (t) {
+              return h(K.ContextMenu, { items: rowMenu(t) },
+                h('div', { className: 'card' },
+                  h('span', { className: 'k-kanban__card-title' }, t.name),
+                  h('span', { className: 'card__meta' }, h(K.Avatar, { name: people[t.owner], size: 'sm' }), h('span', null, shortDate(t.due, lang[0])), h('span', { className: 'card__id' }, t.id))));
+            } })
+          : visible.length ? h(K.Table, { onRowClick: function (r) { openEditor(r); }, rowMenu: rowMenu, columns: [
             { key: 'name', label: 'Task', strong: true },
             { key: 'owner', label: 'Owner', render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.owner], size: 'sm' }), people[r.owner]); } },
             { key: 'status', label: 'Status', render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } },
@@ -243,7 +290,7 @@
                 h(K.Menu, { align: 'end', items: rowMenu(r), trigger: h(K.Button, { size: 'sm', variant: 'ghost', icon: 'more', 'aria-label': 'Actions for ' + r.name }) }));
             } }], rows: visible })
           : h(K.EmptyState, { icon: 'circle-check', title: 'Nothing here', description: 'No tasks match this view.' }),
-          h('p', { className: 'hint' }, 'Tip: click a task to open it, right-click anywhere on it, open the ⋯ menu, or press ⌘K.')));
+          h('p', { className: 'hint' }, layout[0] === 'board' ? 'Tip: drag cards between columns, or focus a card and press Alt and an arrow key.' : 'Tip: click a task to open it, right-click anywhere on it, open the ⋯ menu, or press ⌘K.')));
 
       var onSettings = view === 'settings';
 
@@ -256,24 +303,32 @@
             { id: 'calendar', label: 'Calendar', icon: 'calendar' },
             { id: 'reports', label: 'Reports', icon: 'chart' },
             { id: 'settings', label: 'Settings', icon: 'settings' },
-            { section: 'Projects' },
-            { id: 'p1', label: 'Website', icon: 'folder', count: 12 },
-            { id: 'p2', label: 'Mobile app', icon: 'folder', count: 4 },
-            { id: 'p3', label: 'Archive', icon: 'folder' }],
+            { section: 'Projects' }].concat(projects[0]),
           footer: h('div', { className: 'me' }, h(K.Avatar, { name: profile[0].name || '?', status: 'online' }), h('div', null, profile[0].name, h('small', null, 'Pro plan'))) }),
         h('div', { className: 'main' },
           h(K.Topbar, { breadcrumb: onSettings ? ['Workspace', 'Settings'] : ['Workspace'], title: onSettings ? settingsPages[settingsPage].title : view === 'calendar' ? 'Calendar' : view === 'reports' ? 'Reports' : 'Overview', actions: h(React.Fragment, null,
             h(K.Tooltip, { content: 'Search', shortcut: '⌘K', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'search', 'aria-label': 'Search', onClick: function () { palette[1](true); } })),
             onSettings ? null : h(K.Tooltip, { content: 'Settings', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'settings', 'aria-label': 'Settings', onClick: function () { openSettings(); } })),
+            h(K.NotificationInbox, { items: notifications[0],
+              onRead: function (id) { notifications[1](notifications[0].map(function (n) { return n.id === id ? Object.assign({}, n, { read: true }) : n; })); },
+              onReadAll: function () { notifications[1](notifications[0].map(function (n) { return Object.assign({}, n, { read: true }); })); },
+              onItemClick: function (n) { var t = tasks[0].filter(function (x) { return x.id === n.taskId; })[0]; if (t) openEditor(t); else go('reports'); } }),
             h(K.Switch, { 'aria-label': 'Dark mode', checked: dark, onChange: function (on) { chooseTheme(on ? 'dark' : 'light'); } }),
             onSettings ? null : h(K.Button, { size: 'sm', icon: 'plus', shortcut: 'C', onClick: newTask }, 'New task')) }),
           h('div', { className: 'content' },
             onSettings ? h(Settings, { page: settingsPage, onPage: openSettings, profile: profile[0], onSaveProfile: profile[1], workspace: workspace[0], onSaveWorkspace: workspace[1], prefs: prefs[0], onPref: setPref, theme: theme[0], onTheme: chooseTheme, lang: lang[0], onLang: chooseLang })
               : view === 'reports' ? h(Reports, { lang: lang[0] })
-              : view === 'calendar' ? h(CalendarPage, { tasks: tasks[0], lang: lang[0], weekStart: prefs[0].weekStart, onOpenTask: openEditor })
+              : view === 'calendar' ? h(CalendarPage, { tasks: tasks[0], meetings: meetings[0], lang: lang[0], weekStart: prefs[0].weekStart, onOpenTask: openEditor,
+                  onNewTask: function (date) { newTask(date); },
+                  onNewMeeting: function (date, time) { var start = +time.slice(0, 2), end = String(Math.min(23, start + 1)).padStart(2, '0') + time.slice(2); meetings[1](meetings[0].concat([{ id: 'm' + Date.now(), date: date, time: time, end: end, title: 'New meeting' }])); K.toast.success('Meeting added at ' + time); },
+                  onMoveTask: function (id, date) { update(id, { due: date }); K.toast.success('Moved to ' + shortDate(date, lang[0])); },
+                  onTaskStatus: function (id, s) { update(id, { status: s }); K.toast.success('Status set to ' + s); },
+                  onMoveMeeting: function (id, date) { meetings[1](meetings[0].map(function (m) { return m.id === id ? Object.assign({}, m, { date: date }) : m; })); K.toast.success('Meeting moved to ' + shortDate(date, lang[0])); },
+                  onDeleteMeeting: function (id) { var before = meetings[0]; meetings[1](before.filter(function (m) { return m.id !== id; })); K.toast({ title: 'Meeting deleted', duration: 7000, action: h(K.Button, { size: 'sm', variant: 'secondary', onClick: function () { meetings[1](before); } }, 'Undo') }); } })
               : overview)),
         h(K.CommandPalette, { overlay: true, open: palette[0], autoFocus: true, onClose: function () { palette[1](false); }, items: [
           { group: 'Suggestions', label: 'New task', icon: 'plus', shortcut: 'C', onSelect: function () { palette[1](false); go('home'); newTask(); } },
+          { group: 'Suggestions', label: 'New project', icon: 'folder', onSelect: function () { palette[1](false); openWizard(); } },
           { group: 'Suggestions', label: dark ? 'Switch to light mode' : 'Switch to dark mode', icon: 'settings', onSelect: function () { palette[1](false); chooseTheme(dark ? 'light' : 'dark'); } },
           { group: 'Go to', label: 'Overview', icon: 'home', shortcut: 'G O', onSelect: function () { palette[1](false); go('home'); } },
           { group: 'Go to', label: 'Inbox', icon: 'inbox', shortcut: 'G I', onSelect: function () { palette[1](false); go('inbox'); } },
@@ -290,34 +345,95 @@
         lastConfirm.current ? h(K.Dialog, { overlay: true, open: !!confirm[0], onClose: function () { confirm[1](null); }, title: 'Delete task?', message: '"' + lastConfirm.current.name + '" will be permanently deleted.', actions: [
           { label: 'Cancel', variant: 'secondary', onClick: function () { confirm[1](null); } },
           { label: 'Delete task', variant: 'danger', onClick: function () { remove(lastConfirm.current); confirm[1](null); } }] }) : null,
+        h(ProjectWizard, { key: wizardKey[0], open: wizard[0], onClose: function () { wizard[1](false); }, onCreate: function (proj) {
+          projects[1](projects[0].concat([{ id: 'p' + Date.now(), label: proj.name, icon: 'folder' }]));
+          wizard[1](false);
+          K.toast.success({ title: 'Project created', description: '"' + proj.name + '" was added to the sidebar.' });
+        } }),
         h(K.Toaster));
     }
 
     function TaskEditor(p) {
-      var draft = React.useState(Object.assign({ notes: '' }, p.task));
+      var draft = React.useState(Object.assign({ notes: '', labels: [], files: [] }, p.task));
       var error = React.useState('');
-      function set(k) { return function (e) { var v = e && e.target ? e.target.value : e; var n = Object.assign({}, draft[0]); n[k] = v; draft[1](n); if (k === 'name') error[1](''); }; }
+      var timers = React.useRef([]);
+      React.useEffect(function () { return function () { timers.current.forEach(clearInterval); }; }, []);
+      function set(k) { return function (e) { var v = e && e.target ? e.target.value : e; draft[1](function (d) { var n = Object.assign({}, d); n[k] = v; return n; }); if (k === 'name') error[1](''); }; }
+      function patchFiles(fn) { draft[1](function (d) { return Object.assign({}, d, { files: fn(d.files || []) }); }); }
+      // A pretend upload, so the progress bars have something to show.
+      function upload(files) {
+        var added = files.map(function (f, i) { return { id: Date.now() + '-' + i, name: f.name, size: f.size, progress: 0 }; });
+        patchFiles(function (list) { return list.concat(added); });
+        var progress = {};
+        added.forEach(function (a) { progress[a.id] = 0; });
+        var timer = setInterval(function () {
+          var done = true;
+          added.forEach(function (a) { progress[a.id] = Math.min(1, progress[a.id] + 0.08 + Math.random() * 0.1); if (progress[a.id] < 1) done = false; });
+          patchFiles(function (list) { return list.map(function (f) { return progress[f.id] != null ? Object.assign({}, f, { progress: progress[f.id] }) : f; }); });
+          if (done) clearInterval(timer);
+        }, 120);
+        timers.current.push(timer);
+      }
       function save() { if (!draft[0].name.trim()) { error[1]('Give the task a name'); return; } p.onSave(draft[0]); }
+      var t = p.task;
       return h(K.Modal, { open: p.open, onClose: p.onClose,
-        title: p.task.isNew ? 'New task' : 'Edit task',
-        description: p.task.isNew ? 'It will be added to the Website project.' : p.task.id + ' · Website',
+        title: t.isNew ? 'New task' : 'Edit task',
+        description: t.isNew ? 'It will be added to the Website project.' : t.id + ' · Website',
         footer: h(React.Fragment, null,
           h(K.Button, { variant: 'secondary', onClick: p.onClose }, 'Cancel'),
-          h(K.Button, { icon: 'check', onClick: save }, p.task.isNew ? 'Create task' : 'Save changes')) },
+          h(K.Button, { icon: 'check', onClick: save }, t.isNew ? 'Create task' : 'Save changes')) },
         h('div', { className: 'task' },
           h('div', { className: 'task__main' },
             h(K.TextField, { label: 'Name', value: draft[0].name, onChange: set('name'), placeholder: 'What needs to be done?', error: error[0] || undefined, autoFocus: true }),
-            h(K.Textarea, { label: 'Notes', rows: 10, maxLength: 2000, value: draft[0].notes, onChange: set('notes'), placeholder: 'Add details, links and decisions for the team' }),
-            p.task.isNew ? null : h(K.List, { header: 'Activity' },
-              h(K.ListRow, { icon: 'circle-check', title: 'Status set to ' + p.task.status, subtitle: 'Today at 9:14 AM' }),
-              h(K.ListRow, { icon: 'person', title: 'Assigned to ' + people[p.task.owner], subtitle: 'Oct 24' }),
-              h(K.ListRow, { icon: 'plus', title: 'Task created', subtitle: 'Oct 21' }))),
+            h(K.Textarea, { label: 'Notes', rows: 6, maxLength: 2000, value: draft[0].notes, onChange: set('notes'), placeholder: 'Add details, links and decisions for the team' }),
+            h(K.FileDrop, { label: 'Attachments', hint: 'PDF, PNG or JPG up to 10 MB', accept: '.pdf,image/*', maxSize: 10 * 1024 * 1024, multiple: true,
+              files: draft[0].files, onFiles: upload, onRemove: function (id) { patchFiles(function (list) { return list.filter(function (f) { return f.id !== id; }); }); } }),
+            t.isNew ? null : h('div', { className: 'k-field' },
+              h('span', { className: 'k-field__label' }, 'Activity'),
+              h(K.Timeline, { 'aria-label': 'Activity', items: [
+                { id: 'a1', avatar: people.mia, title: h(React.Fragment, null, h('strong', null, 'Mia Larsen'), ' commented'), description: 'Can we keep the old hero image until the new one is approved?', time: 'Today at 9:40 AM' },
+                { id: 'a2', icon: 'circle-check', title: h(React.Fragment, null, 'Status set to ', h('strong', null, t.status)), time: 'Today at 9:14 AM' },
+                { id: 'a3', icon: 'person', title: h(React.Fragment, null, 'Assigned to ', h('strong', null, people[t.owner])), time: shortDate(isoFromToday(-6), 'en') },
+                { id: 'a4', icon: 'plus', title: 'Task created', time: shortDate(isoFromToday(-9), 'en') }] }))),
           h('aside', { className: 'task__side' },
             h(K.Dropdown, { label: 'Owner', value: draft[0].owner, onChange: set('owner'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) }),
             h(K.DatePicker, { label: 'Due', value: draft[0].due, onChange: set('due') }),
+            h(K.MultiSelect, { label: 'Labels', placeholder: 'Add labels', value: draft[0].labels, onChange: set('labels'), options: labelOptions }),
             h('div', { className: 'k-field' },
               h('span', { className: 'k-field__label' }, 'Status'),
               h(K.RadioGroup, { 'aria-label': 'Status', value: draft[0].status, onChange: set('status'), options: statuses })))));
+    }
+
+    function ProjectWizard(p) {
+      var stepIndex = React.useState(0), current = stepIndex[0];
+      var d = React.useState({ name: '', description: '', deadline: isoFromToday(30), lead: 'ava', members: ['ava'] });
+      var nameError = React.useState('');
+      var steps = [{ label: 'Details', description: 'Name and goal' }, { label: 'Team', description: 'Who works on it' }, { label: 'Review', description: 'Check and create' }];
+      function set(k) { return function (e) { var v = e && e.target ? e.target.value : e; var n = Object.assign({}, d[0]); n[k] = v; d[1](n); if (k === 'name') nameError[1](''); }; }
+      function next() {
+        if (current === 0 && !d[0].name.trim()) { nameError[1]('Give the project a name'); return; }
+        if (current < steps.length - 1) stepIndex[1](current + 1);
+        else p.onCreate(d[0]);
+      }
+      var body = current === 0 ? [
+          h(K.TextField, { key: 'n', label: 'Name', value: d[0].name, onChange: set('name'), placeholder: 'Website relaunch', error: nameError[0] || undefined, autoFocus: true }),
+          h(K.Textarea, { key: 'd', label: 'Goal', rows: 3, maxLength: 280, value: d[0].description, onChange: set('description'), placeholder: 'What should be true when the project is done?' }),
+          h(K.DatePicker, { key: 'dl', label: 'Deadline', value: d[0].deadline, onChange: set('deadline') })]
+        : current === 1 ? [
+          h(K.Dropdown, { key: 'l', label: 'Lead', value: d[0].lead, onChange: set('lead'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) }),
+          h(K.MultiSelect, { key: 'm', label: 'Members', hint: 'Everyone here can see and edit the project.', value: d[0].members, onChange: set('members'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) })]
+        : [h(K.List, { key: 's', header: 'Summary' },
+          h(K.ListRow, { icon: 'folder', title: d[0].name, subtitle: d[0].description || 'No goal yet' }),
+          h(K.ListRow, { icon: 'person', title: 'Lead', value: people[d[0].lead] }),
+          h(K.ListRow, { icon: 'inbox', title: 'Members', value: h(K.AvatarGroup, { names: d[0].members.map(function (m) { return people[m]; }), max: 4 }) }),
+          h(K.ListRow, { icon: 'calendar', title: 'Deadline', value: shortDate(d[0].deadline, 'en') }))];
+      return h(K.Modal, { size: 'md', open: p.open, onClose: p.onClose, title: 'New project', description: 'Three short steps.',
+        footer: h(React.Fragment, null,
+          current > 0 ? h(K.Button, { variant: 'secondary', icon: 'chevron-left', onClick: function () { stepIndex[1](current - 1); } }, 'Back')
+            : h(K.Button, { variant: 'secondary', onClick: p.onClose }, 'Cancel'),
+          h(K.Button, { icon: current < steps.length - 1 ? undefined : 'check', iconRight: current < steps.length - 1 ? 'arrow-right' : undefined, onClick: next }, current < steps.length - 1 ? 'Next' : 'Create project')) },
+        h(K.Stepper, { 'aria-label': 'New project', steps: steps, current: current, onStepClick: stepIndex[1] }),
+        h('div', { key: current, className: 'wizard__step' }, body));
     }
 
     /* ---------- Reports ---------- */
@@ -378,31 +494,46 @@
     }
 
     /* ---------- Calendar ---------- */
-    var meetings = [
-      { id: 'm1', offset: -2, time: '11:00', title: 'Retro' },
-      { id: 'm2', offset: 1, time: '10:00', title: 'Design review' },
-      { id: 'm3', offset: 2, time: '14:30', title: 'Sprint planning' },
-      { id: 'm4', offset: 3, time: '13:00', title: 'Copy review' },
-      { id: 'm5', offset: 8, time: '09:00', title: 'Client call' },
-      { id: 'm6', offset: 9, time: '15:00', title: 'Launch rehearsal' },
-      { id: 'm7', offset: 15, time: '10:30', title: 'Quarterly review' }
-    ];
-
     function CalendarPage(p) {
       var day = React.useState(isoFromToday(0));
       var events = p.tasks.map(function (t) { return { id: t.id, date: t.due, title: t.name, task: t }; })
-        .concat(meetings.map(function (m) { return { id: m.id, date: isoFromToday(m.offset), time: m.time, title: m.title }; }));
-      var agenda = events.filter(function (e) { return e.date === day[0]; }).sort(function (a, b) { return (a.time || '99').localeCompare(b.time || '99'); });
-      function open(ev) { if (ev.task) p.onOpenTask(ev.task); else K.toast(ev.title + ' at ' + ev.time); }
+        .concat(p.meetings.map(function (m) { return Object.assign({ meeting: true }, m); }));
+      var agenda = events.filter(function (e) { return e.date === day[0]; }).sort(function (a, b) { return (a.time || '00:00').localeCompare(b.time || '00:00'); });
+      function open(ev) { if (ev.task) p.onOpenTask(ev.task); else K.toast(ev.title + ' · ' + ev.time + (ev.end ? '–' + ev.end : '')); }
+      function nextDay(iso) { var d = dateOf(iso); d.setDate(d.getDate() + 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+      function dayMenu(date, time) {
+        return [
+          { heading: longDate(date, p.lang) + (time ? ' · ' + time : '') },
+          { label: time ? 'New meeting at ' + time : 'New meeting', icon: 'calendar', onSelect: function () { p.onNewMeeting(date, time || '09:00'); } },
+          { label: 'New task due this day', icon: 'plus', onSelect: function () { p.onNewTask(date); } },
+          { separator: true },
+          { label: 'Show the plan for this day', icon: 'arrow-right', onSelect: function () { day[1](date); } }
+        ];
+      }
+      function eventMenu(ev) {
+        if (ev.task) return [
+          { heading: ev.task.id },
+          { label: 'Open task', icon: 'edit', onSelect: function () { p.onOpenTask(ev.task); } },
+          { label: 'Move to the next day', icon: 'arrow-right', onSelect: function () { p.onMoveTask(ev.task.id, nextDay(ev.date)); } },
+          { label: 'Status', icon: 'circle-check', items: statuses.map(function (s) { return { label: s, checked: ev.task.status === s, onSelect: function () { p.onTaskStatus(ev.task.id, s); } }; }) }
+        ];
+        return [
+          { heading: ev.title + ' · ' + ev.time },
+          { label: 'Move to the next day', icon: 'arrow-right', onSelect: function () { p.onMoveMeeting(ev.id, nextDay(ev.date)); } },
+          { separator: true },
+          { label: 'Delete meeting', icon: 'trash', danger: true, onSelect: function () { p.onDeleteMeeting(ev.id); } }
+        ];
+      }
       return h('div', { className: 'inner' },
         h('div', { className: 'head' },
-          h('div', null, h('h1', { className: 'k-h1' }, 'Calendar'), h('p', null, 'Deadlines and meetings for the team. Click a day to see its plan.'))),
+          h('div', null, h('h1', { className: 'k-h1' }, 'Calendar'), h('p', null, 'Deadlines and meetings for the team. Right-click a day, a time or an event for more.'))),
         h('div', { className: 'calendar-layout' },
-          h(K.Calendar, { events: events, value: day[0], onChange: day[1], onEventClick: open, weekStartsOn: p.weekStart === 'Sunday' ? 0 : 1 }),
+          h(K.Calendar, { events: events, value: day[0], onChange: day[1], onEventClick: open, views: ['month', 'week', 'day'], defaultView: p.defaultView || 'month',
+            dayMenu: dayMenu, eventMenu: eventMenu, weekStartsOn: p.weekStart === 'Sunday' ? 0 : 1 }),
           h(K.List, { header: longDate(day[0], p.lang) },
             agenda.length ? agenda.map(function (ev) {
-              return h(K.ListRow, { key: ev.id, icon: ev.task ? 'circle-check' : 'calendar', title: ev.title, subtitle: ev.task ? 'Deadline · ' + people[ev.task.owner] : 'Meeting', value: ev.time || null, accessory: 'chevron', onClick: function () { open(ev); } });
-            }) : h(K.ListRow, { title: 'Nothing planned', subtitle: 'A quiet day.' }))));
+              return h(K.ListRow, { key: ev.id, icon: ev.task ? 'circle-check' : 'calendar', title: ev.title, subtitle: ev.task ? 'Deadline · ' + people[ev.task.owner] : 'Meeting' + (ev.end ? ' until ' + ev.end : ''), value: ev.time || null, accessory: 'chevron', onClick: function () { open(ev); } });
+            }) : h(K.ListRow, { title: 'Nothing planned', subtitle: 'Right-click the day to add something.' }))));
     }
 
     function PageHead(p) {
