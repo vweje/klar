@@ -7,4 +7,4 @@ Dropdown choice built on the native `select` - works with keyboards, screen read
 
 The consumer provides: `label`, `options` (strings or `{value, label}`), `value`/`onChange` or `defaultValue`, and optionally `hint`/`error`.
 
-Use `RadioGroup` when there are 2-4 options that should be visible at once.
+Use `Dropdown` for the Klar look with icons, descriptions and search. Keep `Select` for when the phone's own picker is better. Use `RadioGroup` when there are 2-4 options that should be visible at once.

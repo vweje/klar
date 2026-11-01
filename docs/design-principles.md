@@ -41,8 +41,13 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 - 4-point grid: `space-1` (4) to `space-16` (64).
 - Padding: `space-4` in lists, `space-5` in cards and dialogs. `space-6` between groups, `space-8` between sections.
 - App layout: `Sidebar` (300 px) on the left, `Topbar` (56 px) at the top, content on `canvas` with `space-8` margin, using the full width of the content area.
-- Settings: one section per topic with a hairline between; the title and a one-line description on the left (1/3), the controls on the right (2/3).
+- Settings: split into pages under categories in a `NavList`, one `SettingsSection` per topic - title and description on the left (1/3), controls on the right (2/3). See [Patterns](patterns.md#settings).
+- Editing and details open in a `Modal` in the center (up to 1200 x 800), never in a panel from the side.
 - On mobile: hide the sidebar behind a menu button; use `lg` buttons.
+
+## Scrollbars
+
+- Thin, without a track, and the thumb (`fill-hover`) only shows while the pointer is over the area that scrolls. Never hidden for good: people need to see where they are in a long list.
 
 ## Corners
 
@@ -52,7 +57,7 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 ## Depth
 
 - Depth = `border` + the difference between `canvas` and `surface`.
-- `shadow-xs` only on secondary buttons and the selected segment; `shadow-md` on menus, dialogs and toasts; `shadow-lg` only on the command palette and drawer. In dark mode, borders carry depth alone.
+- `shadow-xs` only on secondary buttons and the selected segment; `shadow-md` on menus, dialogs and toasts; `shadow-lg` only on the command palette, the modal and the drawer. In dark mode, borders carry depth alone.
 
 ## Motion
 
@@ -78,8 +83,8 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 
 Install with `npm install github:vweje/klar`, import `klar/styles.css`, and import components from `klar` (React 18+). See [Patterns](patterns.md) for how to combine them, and the [live demo](../examples/index.html) for a full screen.
 
-- App shell: `Sidebar`, `Topbar`, `Tabs`, `Pagination`.
-- Input: `TextField`, `Textarea`, `Select`, `SearchField`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `SegmentedControl`.
+- App shell: `Sidebar`, `Topbar`, `NavList` (sub-navigation), `Tabs`, `Pagination`, `SettingsSection`.
+- Input: `TextField`, `Textarea`, `Dropdown` (custom select), `Select` (native), `SearchField`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `SegmentedControl`.
 - Content and data: `List`/`ListRow`, `Table`, `Card`, `Stat`, `Badge`, `Avatar`/`AvatarGroup`, `Accordion`, `Kbd`, `Tooltip`.
 - Actions and menus: `Button`, `Menu` (dropdown), `ContextMenu` (right-click), `CommandPalette` (⌘K).
 - Layers: `Dialog` for decisions, `Modal` for editing and details in the center, `Drawer` when the list behind must stay visible.
@@ -98,3 +103,6 @@ Install with `npm install github:vweje/klar`, import `klar/styles.css`, and impo
 - Glass, blur, gradients and glow.
 - Colored icons and cards with colored borders.
 - More than one primary button per view.
+- One long settings page - split it into pages under categories.
+- Editing in a panel that slides in from the side - use a `Modal` in the center.
+- Content squeezed into a narrow column in the app - use the full width.

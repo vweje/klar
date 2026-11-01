@@ -6,7 +6,7 @@
 
 <p align="center">
   A sharp, monochrome design system for React.<br>
-  Tokens, 41 components, and themes for Tailwind v4 and shadcn/ui.
+  Tokens, 44 components, and themes for Tailwind v4 and shadcn/ui.
 </p>
 
 <p align="center">
@@ -28,10 +28,11 @@
 
 Klar (Danish for *clear*) is black and white by design: thin borders, small radii, compact controls and bold type set in Manrope. There is no accent color - contrast does the work, and color only ever means status.
 
-- **41 React components** - forms, tables, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers and toast notifications.
+- **44 React components** - forms, a custom dropdown, tables with right-click rows, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers, settings pages and toast notifications.
 - **Design tokens** as CSS variables, with light and dark mode out of the box.
 - **Drop-in themes** for Tailwind v4 and shadcn/ui, so existing projects can adopt the look without a rewrite.
 - **Zero dependencies** besides React 18+. Works with the Next.js App Router, Vite, or a plain `<script>` tag.
+- **Calm motion** - one crossfade when the theme changes, menus and overlays that ease in and out, quiet scrollbars.
 - **Accessible by default** - every text pair meets WCAG AA in both themes, with visible focus rings and keyboard support.
 
 ## Installation
@@ -84,8 +85,8 @@ The package ships with `"use client"`, so components without function props (`Ca
 
 | | |
 | --- | --- |
-| **Layout** | `Sidebar` `Topbar` `Tabs` `Pagination` |
-| **Inputs** | `TextField` `Textarea` `Select` `SearchField` `Checkbox` `RadioGroup` `Switch` `Slider` `SegmentedControl` |
+| **Layout** | `Sidebar` `Topbar` `NavList` `SettingsSection` `Tabs` `Pagination` |
+| **Inputs** | `TextField` `Textarea` `Dropdown` `Select` `SearchField` `Checkbox` `RadioGroup` `Switch` `Slider` `SegmentedControl` |
 | **Data display** | `Table` `List` `ListRow` `Card` `Stat` `Badge` `Avatar` `AvatarGroup` `Accordion` `Tooltip` `Kbd` `Icon` |
 | **Actions and menus** | `Button` `Menu` `MenuPanel` `ContextMenu` `CommandPalette` |
 | **Overlays** | `Dialog` `Modal` `Drawer` |
@@ -125,6 +126,23 @@ toast({
 });
 ```
 
+**Dropdown**
+
+```tsx
+<Dropdown
+  label="Owner"
+  value={owner}
+  onChange={setOwner}
+  search
+  options={[
+    { section: 'Design' },
+    { value: 'ava', label: 'Ava Thompson', description: 'Product designer' },
+    { section: 'Engineering' },
+    { value: 'noah', label: 'Noah Bennett', description: 'Frontend' },
+  ]}
+/>
+```
+
 **Table**
 
 ```tsx
@@ -136,6 +154,10 @@ toast({
   ]}
   rows={tasks}
   onRowClick={(row) => open(row.id)}
+  rowMenu={(row) => [
+    { label: 'Edit', icon: 'edit', onSelect: () => open(row.id) },
+    { label: 'Delete', icon: 'trash', danger: true, onSelect: () => remove(row.id) },
+  ]}
 />
 ```
 

@@ -137,7 +137,17 @@
 /* Klar - component styles. Every value comes from tokens.css (var(--…)). */
 body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 500; background: var(--canvas); color: var(--text); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .k-icon { flex: none; display: block; }
-:where(.k-btn, .k-seg__item, .k-switch, .k-check__box, .k-row--action, .k-sidebar__item):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Scrollbars: thin, no track, and the thumb only shows while the pointer is over the area that scrolls.
+   :where() keeps it at zero specificity so an app can restyle any scroller. Safari uses the ::-webkit rules. */
+:where(*) { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+:where(*:hover) { scrollbar-color: var(--fill-hover) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: var(--radius-full); background-color: transparent; background-clip: padding-box; }
+:hover::-webkit-scrollbar-thumb { background-color: var(--fill-hover); }
+::-webkit-scrollbar-thumb:hover { background-color: var(--border-strong); }
+::-webkit-scrollbar-corner { background: transparent; }
+:where(.k-btn, .k-seg__item, .k-switch, .k-check__box, .k-row--action, .k-sidebar__item, .k-navlist__item):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 /* Demo layout helpers */
 .k-demo { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; padding: var(--space-6); }
@@ -276,6 +286,25 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-sidebar__count { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
 .k-sidebar__footer { padding-top: var(--space-3); border-top: 1px solid var(--border); }
 
+/* NavList: sub-navigation inside a page, e.g. settings. Same rhythm as the sidebar. */
+.k-navlist { display: flex; flex-direction: column; gap: 2px; }
+.k-navlist__section { margin: var(--space-5) 0 var(--space-1); padding: 0 var(--space-2); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-secondary); }
+.k-navlist__section:first-child { margin-top: 0; }
+.k-navlist__item { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; font: inherit; font-size: 14px; font-weight: 700; color: var(--text-secondary); text-align: left; cursor: pointer; transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.k-navlist__item:hover { background: var(--fill); color: var(--text); }
+.k-navlist__item--on { background: var(--fill); color: var(--text); }
+.k-navlist__label { flex: 1; }
+.k-navlist__count { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+
+/* SettingsSection: title and description on the left (1/3), the controls on the right (2/3), hairline between sections */
+.k-setting { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr); gap: var(--space-8); padding: var(--space-6) 0; border-top: 1px solid var(--border); }
+.k-setting:first-child { border-top: 0; padding-top: 0; }
+.k-setting__title { margin: 0; font-size: 15px; line-height: 20px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+.k-setting__desc { margin: 4px 0 0; max-width: 360px; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.k-setting__body { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); min-width: 0; }
+.k-setting__body > :where(.k-field, .k-list, .k-table-wrap, .k-radios) { align-self: stretch; }
+@media (max-width: 860px) { .k-setting { grid-template-columns: 1fr; gap: var(--space-4); } }
+
 /* Dialog */
 .k-scrim { position: fixed; inset: 0; display: grid; place-items: center; padding: var(--space-6); background: var(--scrim); z-index: var(--z-dialog); }
 .k-dialog { width: 420px; max-width: 100%; box-sizing: border-box; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
@@ -294,6 +323,25 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-select { position: relative; display: flex; }
 .k-select__el { flex: 1; padding-right: 36px; -webkit-appearance: none; appearance: none; cursor: pointer; }
 .k-select__chev { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; }
+
+/* Dropdown: custom select. The trigger is a field; the panel is a Klar menu. */
+.k-dd__trigger { display: flex; align-items: center; gap: var(--space-2); width: 100%; text-align: left; cursor: pointer; }
+.k-dd__trigger:disabled { cursor: default; }
+.k-dd__trigger[aria-expanded="true"] { border-color: var(--focus-ring); box-shadow: 0 0 0 1px var(--focus-ring); }
+.k-dd__value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-dd__trigger--empty .k-dd__value { color: var(--text-muted); }
+.k-dd__chev { color: var(--text-secondary); transition: transform var(--duration-base) var(--ease-out); }
+.k-dd__trigger[aria-expanded="true"] .k-dd__chev { transform: rotate(180deg); }
+/* Doubled class names so these win over the .k-menu rules further down */
+.k-menu.k-dd__panel { position: fixed; z-index: var(--z-dropdown); display: flex; flex-direction: column; min-width: 0; max-height: 296px; padding: 0; overflow: hidden; }
+.k-dd__search { flex: none; display: flex; align-items: center; gap: var(--space-2); height: 44px; padding: 0 var(--space-3); border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.k-dd__search-input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; font: inherit; font-size: 14px; color: var(--text); outline: none; }
+.k-dd__search-input::placeholder { color: var(--text-muted); }
+.k-dd__list { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 4px; }
+.k-menu__item.k-dd__option { height: auto; min-height: 32px; padding-top: 6px; padding-bottom: 6px; cursor: pointer; }
+.k-menu__item.k-dd__option--disabled, .k-menu__item.k-dd__option--disabled:hover { color: var(--text-disabled); background: transparent; cursor: default; }
+.k-dd__desc { display: block; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-secondary); }
+.k-dd__empty { margin: 0; padding: var(--space-4); text-align: center; color: var(--text-secondary); }
 
 /* RadioGroup */
 .k-radios { display: flex; flex-direction: column; gap: var(--space-3); }
@@ -374,7 +422,7 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-table__strong { font-weight: 700; color: var(--text) !important; }
 .k-table__mono { font-family: var(--font-mono); font-size: 13px; }
 .k-table__row--action { cursor: pointer; }
-.k-table tbody tr:hover td { background: var(--canvas); }
+.k-table tbody tr:hover td, .k-table tbody tr.k-table__row--menu td { background: var(--canvas); }
 
 /* EmptyState */
 .k-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: var(--space-12) var(--space-6); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); }
@@ -525,6 +573,9 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-ctx > .k-menu { transform-origin: top left; animation: k-drop-in var(--duration-base) var(--ease-out); }
 .k-dropdown__panel.k-leaving, .k-ctx.k-leaving > .k-menu { animation: k-drop-out var(--duration-fast) var(--ease-in) forwards; pointer-events: none; }
 .k-menu--nested { animation: k-fade-in var(--duration-fast) var(--ease-out); }
+.k-dd__panel { transform-origin: top center; animation: k-drop-in var(--duration-base) var(--ease-out); }
+.k-dd__panel--up { transform-origin: bottom center; animation-name: k-rise-in; }
+.k-dd__panel.k-leaving { animation: k-drop-out var(--duration-fast) var(--ease-in) forwards; pointer-events: none; }
 
 @keyframes k-fade-in { from { opacity: 0; } }
 @keyframes k-fade-out { to { opacity: 0; } }
@@ -547,6 +598,6 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
-  .k-scrim, .k-scrim > *, .k-dropdown__panel, .k-ctx > .k-menu, .k-menu--nested, .k-toasts__item, .k-acc__body, .k-check__box .k-icon { animation: none !important; }
+  .k-scrim, .k-scrim > *, .k-dropdown__panel, .k-dd__panel, .k-ctx > .k-menu, .k-menu--nested, .k-toasts__item, .k-acc__body, .k-check__box .k-icon { animation: none !important; }
   .k-skel, .k-spinner { animation-duration: 3s; }
 }

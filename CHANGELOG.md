@@ -2,9 +2,17 @@
 
 ## Unreleased
 
+- `Dropdown`: a custom select that matches Klar's menus, with icons, descriptions, groups, search, full keyboard support and the same motion as menus. It never gets clipped inside a `Modal`.
+- `Table` takes `rowMenu`: a right-click anywhere on a row opens its menu, and the row stays highlighted while it is open.
+- `ContextMenu` stays inside the window near the edges, and nested right-click areas no longer open two menus.
+- `IconName` lists every icon Klar ships with.
+- `NavList`: sub-navigation inside a page, with category headings. `SettingsSection`: one settings topic with title and description on the left and controls on the right.
+- Settings pattern: pages grouped under Account, Preferences and Workspace, each with its own URL; saved pages and pages that apply right away are kept apart.
+- The demo's settings are split into eight pages under three categories.
 - `Modal`: a large centered screen (up to 1200 x 800, full screen on phones) for editing and details, with the same entrance and exit as `Dialog`.
 - The demo uses the full width of the content area, edits tasks in a `Modal` and has a settings page.
 - The sidebar token is 300 px instead of 240 px.
+- Scrollbars are thin, without a track, and only show while the pointer is over the area that scrolls.
 - Motion tokens: `duration-fast`, `duration-base`, `duration-slow`, `ease-out` and `ease-in`. Every transition in the components now uses them.
 - `setTheme()` switches between light and dark with a single crossfade.
 - Menus, context menus, dialogs, the drawer, the command palette, toasts and accordions animate in and out with opacity and transform only.

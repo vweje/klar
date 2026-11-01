@@ -9,3 +9,5 @@ Vertical main navigation for desktop - replaces the tab bar from the mobile desi
 The consumer provides: `items`, `value`/`onChange` or `defaultValue`, `header` and `footer`.
 
 On mobile: hide the sidebar behind a menu button in `Topbar`.
+
+Use `NavList` for navigation between pages inside one area, such as settings.

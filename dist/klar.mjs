@@ -399,6 +399,50 @@ function Sidebar(p) {
     p.footer ? h("div", { className: "k-sidebar__footer" }, p.footer) : null
   );
 }
+function NavList(p) {
+  var items = p.items || [];
+  var first = items.filter(function(it) {
+    return it.id;
+  })[0];
+  var st = useControlled(p.value, p.defaultValue !== void 0 ? p.defaultValue : first && first.id), v = st[0];
+  return h(
+    "nav",
+    { className: cx("k-navlist", p.className), "aria-label": p["aria-label"] },
+    items.map(function(it, i) {
+      if (it.section) return h("p", { key: "s" + i, className: "k-navlist__section" }, it.section);
+      var on = it.id === v;
+      return h(
+        "button",
+        {
+          key: it.id,
+          type: "button",
+          className: cx("k-navlist__item", on && "k-navlist__item--on"),
+          "aria-current": on ? "page" : void 0,
+          onClick: function() {
+            st[1](it.id);
+            if (p.onChange) p.onChange(it.id);
+          }
+        },
+        it.icon ? h(Icon, { name: it.icon, size: 16 }) : null,
+        h("span", { className: "k-navlist__label" }, it.label),
+        it.count != null ? h("span", { className: "k-navlist__count" }, it.count) : null
+      );
+    })
+  );
+}
+function SettingsSection(p) {
+  return h(
+    "section",
+    { className: cx("k-setting", p.className) },
+    h(
+      "div",
+      { className: "k-setting__head" },
+      h("h3", { className: "k-setting__title" }, p.title),
+      p.description ? h("p", { className: "k-setting__desc" }, p.description) : null
+    ),
+    h("div", { className: "k-setting__body" }, p.children)
+  );
+}
 function Dialog(p) {
   var id = R.useId();
   var presence = usePresence(p.open !== false, "duration-fast");
@@ -476,6 +520,217 @@ function Select(p) {
       h(Icon, { name: "chevron-down", size: 16, className: "k-select__chev" })
     ),
     note ? h("p", { id: id + "-note", className: "k-field__note" }, note) : null
+  );
+}
+function Dropdown(p) {
+  var auto = R.useId(), id = p.id || auto;
+  var opts = (p.options || []).map(function(o) {
+    return typeof o === "string" ? { value: o, label: o } : o;
+  });
+  var choices = opts.filter(function(o) {
+    return !o.section;
+  });
+  var st = useControlled(p.value, p.defaultValue), v = st[0];
+  var open = useState2(false), q = useState2(""), act = useState2(0), pos = useState2(null);
+  var presence = usePresence(open[0], "duration-fast");
+  var wrap = R.useRef(null), trigger = R.useRef(null), list = R.useRef(null);
+  var query = q[0].trim().toLowerCase();
+  var shown = opts.filter(function(o) {
+    return o.section ? !query : !query || String(o.label).toLowerCase().indexOf(query) >= 0;
+  });
+  var selectable = shown.filter(function(o) {
+    return !o.section && !o.disabled;
+  });
+  var current = choices.filter(function(o) {
+    return o.value === v;
+  })[0];
+  var note = p.error || p.hint;
+  function show() {
+    if (p.disabled || !trigger.current) return;
+    var r = trigger.current.getBoundingClientRect();
+    var panelHeight = Math.min(296, choices.length * 32 + 8) + (p.search ? 48 : 0);
+    var below = window.innerHeight - r.bottom, up = below < panelHeight + 12 && r.top > below;
+    pos[1]({ left: r.left, width: r.width, top: up ? void 0 : r.bottom + 6, bottom: up ? window.innerHeight - r.top + 6 : void 0, up });
+    q[1]("");
+    act[1](Math.max(0, choices.filter(function(o) {
+      return !o.disabled;
+    }).indexOf(current)));
+    open[1](true);
+  }
+  function hide(refocus) {
+    open[1](false);
+    if (refocus && trigger.current) trigger.current.focus();
+  }
+  function pick(o) {
+    if (!o || o.disabled) return;
+    st[1](o.value);
+    if (p.onChange) p.onChange(o.value);
+    hide(true);
+  }
+  function move(to) {
+    act[1](Math.max(0, Math.min(selectable.length - 1, to)));
+  }
+  function onKey(e) {
+    if (!open[0]) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        show();
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      move(act[0] + 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      move(act[0] - 1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      move(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      move(selectable.length - 1);
+    } else if (e.key === "Enter" || e.key === " " && !p.search) {
+      e.preventDefault();
+      pick(selectable[act[0]]);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      hide(true);
+    } else if (e.key === "Tab") hide(false);
+    else if (!p.search && e.key.length === 1) {
+      var key = e.key.toLowerCase(), n = selectable.length;
+      for (var i = 1; i <= n; i++) {
+        var o = selectable[(act[0] + i) % n];
+        if (String(o.label).toLowerCase().charAt(0) === key) {
+          act[1]((act[0] + i) % n);
+          break;
+        }
+      }
+    }
+  }
+  R.useEffect(function() {
+    if (!open[0]) return;
+    function off(e) {
+      if (wrap.current && !wrap.current.contains(e.target)) hide(false);
+    }
+    function scroll(e) {
+      if (!list.current || !list.current.contains(e.target)) hide(false);
+    }
+    document.addEventListener("mousedown", off);
+    window.addEventListener("scroll", scroll, true);
+    window.addEventListener("resize", off);
+    return function() {
+      document.removeEventListener("mousedown", off);
+      window.removeEventListener("scroll", scroll, true);
+      window.removeEventListener("resize", off);
+    };
+  }, [open[0]]);
+  R.useEffect(function() {
+    var l = list.current, el = open[0] && l && l.querySelector("[data-active]");
+    if (!el) return;
+    if (el.offsetTop < l.scrollTop) l.scrollTop = el.offsetTop - 4;
+    else if (el.offsetTop + el.offsetHeight > l.scrollTop + l.clientHeight) l.scrollTop = el.offsetTop + el.offsetHeight - l.clientHeight + 4;
+  }, [open[0], act[0], query]);
+  var activeOption = open[0] ? selectable[act[0]] : null;
+  var optionId = function(o) {
+    return id + "-o-" + choices.indexOf(o);
+  };
+  var panel = presence.show && pos[0] ? h(
+    "div",
+    {
+      className: cx("k-menu k-dd__panel", pos[0].up && "k-dd__panel--up", presence.leaving && "k-leaving"),
+      style: { left: pos[0].left, top: pos[0].top, bottom: pos[0].bottom, width: pos[0].width }
+    },
+    p.search ? h(
+      "div",
+      { className: "k-dd__search" },
+      h(Icon, { name: "search", size: 15 }),
+      h("input", {
+        className: "k-dd__search-input",
+        autoFocus: true,
+        value: q[0],
+        placeholder: strings.search,
+        "aria-label": strings.search,
+        "aria-controls": id + "-list",
+        "aria-activedescendant": activeOption ? optionId(activeOption) : void 0,
+        onChange: function(e) {
+          q[1](e.target.value);
+          act[1](0);
+        },
+        onKeyDown: onKey
+      })
+    ) : null,
+    h(
+      "div",
+      { ref: list, id: id + "-list", role: "listbox", "aria-labelledby": p.label ? id + "-label" : void 0, "aria-label": p.label ? void 0 : p["aria-label"], className: "k-dd__list" },
+      selectable.length === 0 ? h("p", { className: "k-dd__empty" }, strings.noResults + ' "' + q[0] + '"') : null,
+      shown.map(function(o, i) {
+        if (o.section) return h("p", { key: "s" + i, className: "k-menu__heading" }, o.section);
+        var on = o.value === v, active = o === activeOption;
+        return h(
+          "div",
+          {
+            key: String(o.value),
+            id: optionId(o),
+            role: "option",
+            "aria-selected": on,
+            "aria-disabled": o.disabled || void 0,
+            "data-active": active || void 0,
+            className: cx("k-menu__item k-dd__option", active && "k-menu__item--active", o.disabled && "k-dd__option--disabled"),
+            onMouseMove: function() {
+              if (!o.disabled && !active) act[1](selectable.indexOf(o));
+            },
+            onMouseDown: function(e) {
+              e.preventDefault();
+            },
+            onClick: function() {
+              pick(o);
+            }
+          },
+          h("span", { className: "k-menu__check" }, on ? h(Icon, { name: "check", size: 14, weight: 2.5 }) : null),
+          o.icon ? h(Icon, { name: o.icon, size: 15 }) : null,
+          h("span", { className: "k-menu__label" }, o.label, o.description ? h("span", { className: "k-dd__desc" }, o.description) : null)
+        );
+      })
+    )
+  ) : null;
+  return h(
+    "div",
+    { ref: wrap, className: cx("k-field", p.error && "k-field--error", p.className) },
+    p.label ? h("label", { id: id + "-label", className: "k-field__label", htmlFor: id, onClick: function(e) {
+      e.preventDefault();
+      if (trigger.current) trigger.current.focus();
+    } }, p.label) : null,
+    h(
+      "button",
+      {
+        ref: trigger,
+        id,
+        type: "button",
+        role: "combobox",
+        disabled: p.disabled,
+        className: cx("k-input k-dd__trigger", !current && "k-dd__trigger--empty"),
+        "aria-haspopup": "listbox",
+        "aria-expanded": open[0],
+        "aria-controls": open[0] ? id + "-list" : void 0,
+        "aria-activedescendant": !p.search && activeOption ? optionId(activeOption) : void 0,
+        "aria-label": p.label ? void 0 : p["aria-label"],
+        "aria-invalid": p.error ? true : void 0,
+        "aria-describedby": note ? id + "-note" : void 0,
+        onClick: function() {
+          if (open[0]) hide(false);
+          else show();
+        },
+        onKeyDown: onKey
+      },
+      current && current.icon ? h(Icon, { name: current.icon, size: 15 }) : null,
+      h("span", { className: "k-dd__value" }, current ? current.label : p.placeholder || ""),
+      h(Icon, { name: "chevron-down", size: 16, className: "k-dd__chev" })
+    ),
+    p.name ? h("input", { type: "hidden", name: p.name, value: v == null ? "" : v }) : null,
+    note ? h("p", { id: id + "-note", className: "k-field__note" }, p.error ? h(Icon, { name: "info", size: 13 }) : null, note) : null,
+    panel
   );
 }
 function RadioGroup(p) {
@@ -628,27 +883,40 @@ function Stat(p) {
 }
 function Table(p) {
   var cols = p.columns || [], rows = p.rows || [];
+  var ctx = useContextMenu();
   return h(
-    "div",
-    { className: cx("k-table-wrap", p.className) },
+    R.Fragment,
+    null,
     h(
-      "table",
-      { className: "k-table" },
-      h("thead", null, h("tr", null, cols.map(function(c) {
-        return h("th", { key: c.key, style: { width: c.width, textAlign: c.align || "left" } }, c.label);
-      }))),
-      h("tbody", null, rows.map(function(r, i) {
-        return h(
-          "tr",
-          { key: r.id != null ? r.id : i, className: p.onRowClick ? "k-table__row--action" : void 0, onClick: p.onRowClick ? function() {
-            p.onRowClick(r);
-          } : void 0 },
-          cols.map(function(c) {
-            return h("td", { key: c.key, style: { textAlign: c.align || "left" }, className: c.strong ? "k-table__strong" : c.mono ? "k-table__mono" : void 0 }, c.render ? c.render(r) : r[c.key]);
-          })
-        );
-      }))
-    )
+      "div",
+      { className: cx("k-table-wrap", p.className) },
+      h(
+        "table",
+        { className: "k-table" },
+        h("thead", null, h("tr", null, cols.map(function(c) {
+          return h("th", { key: c.key, style: { width: c.width, textAlign: c.align || "left" } }, c.label);
+        }))),
+        h("tbody", null, rows.map(function(r, i) {
+          return h(
+            "tr",
+            {
+              key: r.id != null ? r.id : i,
+              className: cx(p.onRowClick && "k-table__row--action", ctx.isOpenFor(r) && "k-table__row--menu") || void 0,
+              onClick: p.onRowClick ? function() {
+                p.onRowClick(r);
+              } : void 0,
+              onContextMenu: p.rowMenu ? function(e) {
+                ctx.open(e, r);
+              } : void 0
+            },
+            cols.map(function(c) {
+              return h("td", { key: c.key, style: { textAlign: c.align || "left" }, className: c.strong ? "k-table__strong" : c.mono ? "k-table__mono" : void 0 }, c.render ? c.render(r) : r[c.key]);
+            })
+          );
+        }))
+      )
+    ),
+    p.rowMenu && ctx.data ? ctx.render(p.rowMenu(ctx.data)) : null
   );
 }
 function EmptyState(p) {
@@ -963,17 +1231,20 @@ function CommandPalette(p) {
   );
   return p.overlay ? h("div", { className: cx("k-scrim k-scrim--top", presence.leaving && "k-leaving"), onMouseDown: onScrimDown(p.onClose) }, panel) : panel;
 }
-function ContextMenu(p) {
-  var st = useState2(p.defaultOpenAt || null), pos = st[0], ref = R.useRef(null), last = R.useRef(pos);
+function useContextMenu(initial) {
+  var st = useState2(initial || null), pos = st[0], ref = R.useRef(null), last = R.useRef(pos);
   var presence = usePresence(!!pos, "duration-fast");
   if (pos) last.current = pos;
+  function close() {
+    st[1](null);
+  }
   R.useEffect(function() {
     if (!pos) return;
     function off(e) {
-      if (ref.current && !ref.current.contains(e.target)) st[1](null);
+      if (ref.current && !ref.current.contains(e.target)) close();
     }
     function esc(e) {
-      if (e.key === "Escape") st[1](null);
+      if (e.key === "Escape") close();
     }
     document.addEventListener("mousedown", off);
     document.addEventListener("keydown", esc);
@@ -984,25 +1255,54 @@ function ContextMenu(p) {
       window.removeEventListener("scroll", off, true);
     };
   }, [pos]);
+  useIsoLayout(function() {
+    var el = ref.current;
+    if (!pos || !el) return;
+    var r = el.getBoundingClientRect();
+    if (r.right > window.innerWidth - 8) el.style.left = Math.max(8, window.innerWidth - r.width - 8) + "px";
+    if (r.bottom > window.innerHeight - 8) el.style.top = Math.max(8, pos.y - r.height) + "px";
+  }, [pos]);
+  return {
+    data: last.current && last.current.data,
+    isOpenFor: function(data) {
+      return !!pos && pos.data === data;
+    },
+    // The innermost right-click area wins, so nested areas never open two menus.
+    open: function(e, data) {
+      e.preventDefault();
+      e.stopPropagation();
+      st[1]({ x: e.clientX, y: e.clientY, data });
+    },
+    render: function(items, defaultOpenSub) {
+      if (!presence.show) return null;
+      return h(
+        "div",
+        {
+          ref,
+          className: cx("k-ctx", presence.leaving && "k-leaving"),
+          style: { left: last.current.x, top: last.current.y },
+          onClick: function(e) {
+            e.stopPropagation();
+          },
+          onContextMenu: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        },
+        h(MenuPanel, { items, defaultOpenSub, onClose: close })
+      );
+    }
+  };
+}
+function ContextMenu(p) {
+  var ctx = useContextMenu(p.defaultOpenAt);
   return h(
     R.Fragment,
     null,
     h("div", { className: cx("k-ctx-area", p.className), onContextMenu: function(e) {
-      e.preventDefault();
-      st[1]({ x: e.clientX, y: e.clientY });
+      ctx.open(e);
     } }, p.children),
-    presence.show ? h(
-      "div",
-      { ref, className: cx("k-ctx", presence.leaving && "k-leaving"), style: { left: last.current.x, top: last.current.y }, onClick: function(e) {
-        e.stopPropagation();
-      }, onContextMenu: function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-      } },
-      h(MenuPanel, { items: p.items, defaultOpenSub: p.defaultOpenSub, onClose: function() {
-        st[1](null);
-      } })
-    ) : null
+    ctx.render(p.items, p.defaultOpenSub)
   );
 }
 var toastStore = { list: [], subs: [], id: 0 };
@@ -1119,6 +1419,7 @@ export {
   ContextMenu,
   Dialog,
   Drawer,
+  Dropdown,
   EmptyState,
   Icon,
   Kbd,
@@ -1127,12 +1428,14 @@ export {
   Menu,
   MenuPanel,
   Modal,
+  NavList,
   Pagination,
   ProgressBar,
   RadioGroup,
   SearchField,
   SegmentedControl,
   Select,
+  SettingsSection,
   Sidebar,
   Skeleton,
   Slider,

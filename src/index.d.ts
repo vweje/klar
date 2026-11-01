@@ -9,7 +9,7 @@ export declare function setStrings(next: 'en' | 'da' | Partial<KlarStrings>): Kl
 /** Sets data-theme on <html> with one crossfade (View Transitions where supported). 'system' follows the OS setting. */
 export declare function setTheme(theme: 'light' | 'dark' | 'system'): void;
 
-export type IconName = 'chevron-right' | 'chevron-down' | 'arrow-right' | 'search' | 'check' | 'xmark' | 'plus' | 'more' | 'home' | 'inbox' | 'folder' | 'calendar' | 'chart' | 'person' | 'settings' | 'bell' | 'lock' | 'info';
+export type IconName = 'chevron-right' | 'chevron-down' | 'arrow-right' | 'search' | 'check' | 'xmark' | 'plus' | 'more' | 'home' | 'inbox' | 'folder' | 'calendar' | 'chart' | 'person' | 'settings' | 'bell' | 'lock' | 'info' | 'circle-check' | 'alert' | 'chevron-left' | 'trend-up' | 'trend-down' | 'edit' | 'copy' | 'trash' | 'upload' | 'filter' | 'logout';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; icon?: IconName; iconRight?: IconName; shortcut?: string; block?: boolean }
 export declare function Button(props: ButtonProps): React.ReactElement;
@@ -51,6 +51,14 @@ export type SidebarItem = { id: string; label: string; icon?: IconName; count?: 
 export interface SidebarProps { items: SidebarItem[]; value?: string; defaultValue?: string; onChange?: (id: string) => void; header?: React.ReactNode; footer?: React.ReactNode; 'aria-label'?: string; className?: string }
 export declare function Sidebar(props: SidebarProps): React.ReactElement;
 
+/** Sub-navigation inside a page (e.g. settings): optional group headings followed by items. */
+export type NavListItem = { id: string; label: string; icon?: IconName; count?: number } | { section: string };
+export interface NavListProps { items: NavListItem[]; value?: string; defaultValue?: string; onChange?: (id: string) => void; 'aria-label'?: string; className?: string }
+export declare function NavList(props: NavListProps): React.ReactElement;
+/** One settings topic: title and description on the left, controls on the right. */
+export interface SettingsSectionProps { title: React.ReactNode; description?: React.ReactNode; children?: React.ReactNode; className?: string }
+export declare function SettingsSection(props: SettingsSectionProps): React.ReactElement;
+
 export interface DialogAction { label: string; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; onClick?: () => void }
 export interface DialogProps { title: React.ReactNode; message?: React.ReactNode; actions?: DialogAction[]; overlay?: boolean; /** Keep it rendered and toggle this to animate it in and out. */ open?: boolean; /** Called on Esc and on a click on the scrim. */ onClose?: () => void; children?: React.ReactNode; className?: string }
 export declare function Dialog(props: DialogProps): React.ReactElement | null;
@@ -66,6 +74,10 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 export declare function Textarea(props: TextareaProps): React.ReactElement;
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> { label?: string; hint?: string; error?: string; placeholder?: string; options: Array<string | { value: string; label: string }> }
 export declare function Select(props: SelectProps): React.ReactElement;
+/** Custom select that matches Klar's menus. onChange gets the value, not an event. */
+export type DropdownOption = { value: string; label: string; description?: string; icon?: IconName; disabled?: boolean } | { section: string };
+export interface DropdownProps { label?: string; hint?: string; error?: string; placeholder?: string; options: Array<string | DropdownOption>; value?: string; defaultValue?: string; onChange?: (value: string) => void; /** Adds a search field at the top of the list. */ search?: boolean; /** Renders a hidden input so the value is sent with a form. */ name?: string; disabled?: boolean; id?: string; 'aria-label'?: string; className?: string }
+export declare function Dropdown(props: DropdownProps): React.ReactElement;
 export interface RadioOption { value: string; label: React.ReactNode; description?: React.ReactNode; disabled?: boolean }
 export interface RadioGroupProps { options: Array<string | RadioOption>; value?: string; defaultValue?: string; onChange?: (value: string) => void; variant?: 'list' | 'cards'; 'aria-label'?: string; className?: string }
 export declare function RadioGroup(props: RadioGroupProps): React.ReactElement;
@@ -81,7 +93,7 @@ export declare function Tabs(props: TabsProps): React.ReactElement;
 export interface StatProps { label: React.ReactNode; value: React.ReactNode; delta?: string; trend?: 'up' | 'down' | 'flat'; caption?: React.ReactNode; icon?: IconName; className?: string }
 export declare function Stat(props: StatProps): React.ReactElement;
 export interface TableColumn<T = any> { key: string; label: React.ReactNode; align?: 'left' | 'right' | 'center'; width?: number | string; strong?: boolean; mono?: boolean; render?: (row: T) => React.ReactNode }
-export interface TableProps<T = any> { columns: TableColumn<T>[]; rows: T[]; onRowClick?: (row: T) => void; className?: string }
+export interface TableProps<T = any> { columns: TableColumn<T>[]; rows: T[]; onRowClick?: (row: T) => void; /** Right-click anywhere on a row opens these items. Use the same actions as the row's ⋯ menu. */ rowMenu?: (row: T) => MenuItem[]; className?: string }
 export declare function Table(props: TableProps): React.ReactElement;
 export interface EmptyStateProps { title: React.ReactNode; description?: React.ReactNode; icon?: IconName; action?: React.ReactNode; className?: string }
 export declare function EmptyState(props: EmptyStateProps): React.ReactElement;
@@ -109,4 +121,4 @@ export declare function Drawer(props: DrawerProps): React.ReactElement | null;
 export interface ModalProps { title: React.ReactNode; description?: React.ReactNode; footer?: React.ReactNode; /** Keep it rendered and toggle this to animate it in and out. */ open?: boolean; /** Called on Esc, the close button and a click on the scrim. */ onClose?: () => void; children?: React.ReactNode; className?: string }
 export declare function Modal(props: ModalProps): React.ReactElement | null;
 
-declare global { interface Window { Klar: { Button: typeof Button; TextField: typeof TextField; SearchField: typeof SearchField; Checkbox: typeof Checkbox; Switch: typeof Switch; SegmentedControl: typeof SegmentedControl; List: typeof List; ListRow: typeof ListRow; Card: typeof Card; Badge: typeof Badge; ProgressBar: typeof ProgressBar; Topbar: typeof Topbar; Sidebar: typeof Sidebar; Dialog: typeof Dialog; Icon: typeof Icon; Kbd: typeof Kbd; Textarea: typeof Textarea; Select: typeof Select; RadioGroup: typeof RadioGroup; Slider: typeof Slider; Avatar: typeof Avatar; AvatarGroup: typeof AvatarGroup; Tooltip: typeof Tooltip; Tabs: typeof Tabs; Stat: typeof Stat; Table: typeof Table; EmptyState: typeof EmptyState; Skeleton: typeof Skeleton; Spinner: typeof Spinner; Pagination: typeof Pagination; Accordion: typeof Accordion; Callout: typeof Callout; Toast: typeof Toast; Toaster: typeof Toaster; MenuPanel: typeof MenuPanel; Menu: typeof Menu; ContextMenu: typeof ContextMenu; CommandPalette: typeof CommandPalette; Drawer: typeof Drawer; Modal: typeof Modal; toast: ToastFn; setStrings: typeof setStrings; setTheme: typeof setTheme; locales: typeof locales } } }
+declare global { interface Window { Klar: { Button: typeof Button; TextField: typeof TextField; SearchField: typeof SearchField; Checkbox: typeof Checkbox; Switch: typeof Switch; SegmentedControl: typeof SegmentedControl; List: typeof List; ListRow: typeof ListRow; Card: typeof Card; Badge: typeof Badge; ProgressBar: typeof ProgressBar; Topbar: typeof Topbar; Sidebar: typeof Sidebar; NavList: typeof NavList; SettingsSection: typeof SettingsSection; Dialog: typeof Dialog; Icon: typeof Icon; Kbd: typeof Kbd; Textarea: typeof Textarea; Select: typeof Select; Dropdown: typeof Dropdown; RadioGroup: typeof RadioGroup; Slider: typeof Slider; Avatar: typeof Avatar; AvatarGroup: typeof AvatarGroup; Tooltip: typeof Tooltip; Tabs: typeof Tabs; Stat: typeof Stat; Table: typeof Table; EmptyState: typeof EmptyState; Skeleton: typeof Skeleton; Spinner: typeof Spinner; Pagination: typeof Pagination; Accordion: typeof Accordion; Callout: typeof Callout; Toast: typeof Toast; Toaster: typeof Toaster; MenuPanel: typeof MenuPanel; Menu: typeof Menu; ContextMenu: typeof ContextMenu; CommandPalette: typeof CommandPalette; Drawer: typeof Drawer; Modal: typeof Modal; toast: ToastFn; setStrings: typeof setStrings; setTheme: typeof setTheme; locales: typeof locales } } }
