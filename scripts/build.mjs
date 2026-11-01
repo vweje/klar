@@ -2,8 +2,9 @@
 // Run: npm install && npm run build
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const r = (p) => root + p;
 mkdirSync(r('dist'), { recursive: true });
 
