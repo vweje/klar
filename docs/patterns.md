@@ -28,13 +28,34 @@ Recipes for common screens and situations - which components to use and how to c
 
 - `Calendar` across the content with a `List` of the selected day's plan in a 300 px column on the right; on phones the list goes below.
 - Deadlines come straight from the tasks, meetings show their time. Clicking a task opens it in the `Modal`; dates inside forms use `DatePicker`.
+- Offer Month, Week and Day. Right-click on a day or a time creates things right there; right-click on an event gives its actions.
 - Give the page its own URL (`#calendar`) and open on today.
+
+## Boards
+
+- Offer a board next to the list, never instead of it: a `SegmentedControl` (List, Board) above the data switches between `Table` and `Kanban`, with the same filters.
+- One column per status, in the order work moves. Moving a card changes its status and says so in a toast.
+- Cards show the title, the owner's avatar, the due date and the ID - nothing that needs reading. Right-clicking a card gives the same menu as the row.
+
+## Notifications
+
+- `NotificationInbox` in the `Topbar`, just before the theme switch. Everything in it links to the thing it is about.
+- Toasts confirm what you just did; the inbox tells you what others did. Never both for the same event.
+
+## Attachments
+
+- `FileDrop` inside the form it belongs to, with the allowed types and size in its hint. Show progress per file and keep the form usable while files upload.
+
+## Guides
+
+- Creating something that needs three to five decisions: a `Modal` with `size="md"`, a `Stepper` at the top and Back/Next at the bottom right. The last step is a review with a `List` and the real action ("Create project").
+- Validate each step when Next is pressed, not before. Completed steps can be revisited from the stepper.
 
 ## Forms
 
 - One column, max about 480 px wide; fields separated by `space-4`, groups by `space-8` with an `h3` above.
 - Label above the field, always. Help text below (`hint`); an error replaces the help text (`error`).
-- Dates: `DatePicker`, never a free text field.
+- Dates: `DatePicker`, never a free text field. Several values from a list: `MultiSelect`.
 - Choices: `Dropdown` for five or more options (with `search` from about eight), `RadioGroup` or `SegmentedControl` for 2-4 visible ones, `Checkbox` for yes/no that is saved, `Switch` for yes/no that takes effect immediately.
 - Buttons at the bottom right: secondary "Cancel" first, primary "Save" last. On mobile: `lg` and `block`.
 - Validate on blur or on submit - never while the user is typing for the first time.

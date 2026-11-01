@@ -93,7 +93,9 @@ Install with `npm install github:vweje/klar`, import `klar/styles.css`, and impo
 - App shell: `Sidebar`, `Topbar`, `NavList` (sub-navigation), `Tabs`, `Pagination`, `SettingsSection`.
 - Input: `TextField`, `Textarea`, `Dropdown` (custom select), `Select` (native), `SearchField`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `SegmentedControl`.
 - Charts: `LineChart`, `BarChart`, `BarList`, `Sparkline`.
-- Dates: `Calendar`, `DatePicker`.
+- Dates: `Calendar` (month, week and day), `DatePicker`.
+- Work: `Kanban`, `Timeline`, `Stepper`, `FileDrop`, `MultiSelect`.
+- Layers that belong to a button: `Popover`, `NotificationInbox`.
 - Content and data: `List`/`ListRow`, `Table`, `Card`, `Stat`, `Badge`, `Avatar`/`AvatarGroup`, `Accordion`, `Kbd`, `Tooltip`.
 - Actions and menus: `Button`, `Menu` (dropdown), `ContextMenu` (right-click), `CommandPalette` (⌘K).
 - Layers: `Dialog` for decisions, `Modal` for editing and details in the center, `Drawer` when the list behind must stay visible.

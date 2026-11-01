@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `Calendar` has week and day views (`views`, `view`) with a time grid, all-day row, side-by-side overlaps and a now line, plus right-click menus on days, half hours and events (`dayMenu`, `eventMenu`). `date`/`onDateChange` replace `month`/`onMonthChange`.
+- `Kanban` (drag and drop, Alt + arrow keys), `MultiSelect`, `FileDrop`, `Timeline`, `Stepper`, `Popover` and `NotificationInbox`.
+- `Modal` takes `size="md"` for short forms and guides.
+- A `file` icon.
+- The demo has a board view, a notification inbox, a new-project guide, labels and attachments on tasks, and week and day views with right-click in the calendar.
 - Charts: `LineChart`, `BarChart`, `BarList` and `Sparkline`. Monochrome, at most two series, thin marks, hover tooltips and a hidden table for screen readers. `Stat` takes a `chart`.
 - Dates: `Calendar` (month view with events, or a compact grid) and `DatePicker`, with ISO date values and full keyboard support. `setStrings()` now also sets the locale for dates and numbers.
 - `Menu` opens as a fixed layer, so tables, Modals and scrolling areas no longer clip it, and it opens upward when there is no room.

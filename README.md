@@ -6,7 +6,7 @@
 
 <p align="center">
   A sharp, monochrome design system for React.<br>
-  Tokens, 50 components, and themes for Tailwind v4 and shadcn/ui.
+  Tokens, 57 components, and themes for Tailwind v4 and shadcn/ui.
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@
 
 Klar (Danish for *clear*) is black and white by design: thin borders, small radii, compact controls and bold type set in Manrope. There is no accent color - contrast does the work, and color only ever means status.
 
-- **50 React components** - forms, a custom dropdown, a date picker, charts, a calendar, tables with right-click rows, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers, settings pages and toast notifications.
+- **57 React components** - forms, a custom dropdown, multi-select, file upload, a date picker, charts, a calendar with month, week and day, a kanban board, tables with right-click rows, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers, settings pages and toast notifications.
 - **Design tokens** as CSS variables, with light and dark mode out of the box.
 - **Drop-in themes** for Tailwind v4 and shadcn/ui, so existing projects can adopt the look without a rewrite.
 - **Zero dependencies** besides React 18+. Works with the Next.js App Router, Vite, or a plain `<script>` tag.
@@ -86,12 +86,13 @@ The package ships with `"use client"`, so components without function props (`Ca
 | | |
 | --- | --- |
 | **Layout** | `Sidebar` `Topbar` `NavList` `SettingsSection` `Tabs` `Pagination` |
-| **Inputs** | `TextField` `Textarea` `Dropdown` `Select` `SearchField` `Checkbox` `RadioGroup` `Switch` `Slider` `SegmentedControl` |
+| **Inputs** | `TextField` `Textarea` `Dropdown` `MultiSelect` `FileDrop` `Select` `SearchField` `Checkbox` `RadioGroup` `Switch` `Slider` `SegmentedControl` |
 | **Charts** | `LineChart` `BarChart` `BarList` `Sparkline` |
 | **Dates** | `Calendar` `DatePicker` |
+| **Work** | `Kanban` `Timeline` `Stepper` |
 | **Data display** | `Table` `List` `ListRow` `Card` `Stat` `Badge` `Avatar` `AvatarGroup` `Accordion` `Tooltip` `Kbd` `Icon` |
 | **Actions and menus** | `Button` `Menu` `MenuPanel` `ContextMenu` `CommandPalette` |
-| **Overlays** | `Dialog` `Modal` `Drawer` |
+| **Overlays** | `Dialog` `Modal` `Drawer` `Popover` `NotificationInbox` |
 | **Feedback** | `Toaster` `toast()` `Toast` `Callout` `ProgressBar` `Skeleton` `Spinner` `EmptyState` |
 
 Every component has usage guidelines in [`docs/components`](docs/components). Props are typed in [`dist/index.d.ts`](dist/index.d.ts).
@@ -164,6 +165,27 @@ toast({
 ```tsx
 <Calendar events={[{ date: '2026-11-04', time: '10:00', title: 'Design review' }]} onEventClick={open} />
 <DatePicker label="Due" value={due} onChange={setDue} />
+```
+
+**Board**
+
+```tsx
+<Kanban
+  columns={statuses.map((s) => ({ id: s, title: s, items: tasks.filter((t) => t.status === s) }))}
+  onMove={(id, status, index) => moveTask(id, status, index)}
+  renderCard={(t) => <TaskCard task={t} />}
+/>
+```
+
+**Calendar with week and day views and right-click**
+
+```tsx
+<Calendar
+  views={['month', 'week', 'day']}
+  events={events}
+  dayMenu={(date, time) => [{ label: `New meeting at ${time ?? '09:00'}`, icon: 'calendar', onSelect: () => addMeeting(date, time) }]}
+  eventMenu={(event) => [{ label: 'Delete', icon: 'trash', danger: true, onSelect: () => remove(event.id) }]}
+/>
 ```
 
 **Table**

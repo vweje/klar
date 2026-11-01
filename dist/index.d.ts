@@ -1,7 +1,7 @@
 import type * as React from 'react';
 
 /** Built-in component texts (aria labels, placeholders). English by default. */
-export interface KlarStrings { search: string; selected: string; breadcrumb: string; mainNavigation: string; loading: string; pagination: string; previous: string; next: string; close: string; commands: string; commandPlaceholder: string; searchCommands: string; noResults: string; navigate: string; select: string; /** BCP 47 locale for dates and numbers, e.g. 'en-US' or 'da-DK'. */ locale: string; today: string; previousMonth: string; nextMonth: string; more: string; chooseDate: string }
+export interface KlarStrings { search: string; selected: string; breadcrumb: string; mainNavigation: string; loading: string; pagination: string; previous: string; next: string; close: string; commands: string; commandPlaceholder: string; searchCommands: string; noResults: string; navigate: string; select: string; /** BCP 47 locale for dates and numbers, e.g. 'en-US' or 'da-DK'. */ locale: string; today: string; previousMonth: string; nextMonth: string; more: string; chooseDate: string; previousWeek: string; nextWeek: string; previousDay: string; nextDay: string; view: string; month: string; week: string; day: string; allDay: string; notifications: string; markAllRead: string; all: string; unread: string; caughtUp: string; dropFiles: string; browse: string; remove: string; tooLarge: string; wrongType: string; uploaded: string; moveHint: string; empty: string; completed: string }
 /** Bundled translations. */
 export declare const locales: { en: KlarStrings; da: KlarStrings };
 /** Switch built-in texts globally: setStrings('da'), or pass your own partial set. Call once before rendering. */
@@ -9,7 +9,7 @@ export declare function setStrings(next: 'en' | 'da' | Partial<KlarStrings>): Kl
 /** Sets data-theme on <html> with one crossfade (View Transitions where supported). 'system' follows the OS setting. */
 export declare function setTheme(theme: 'light' | 'dark' | 'system'): void;
 
-export type IconName = 'chevron-right' | 'chevron-down' | 'arrow-right' | 'search' | 'check' | 'xmark' | 'plus' | 'more' | 'home' | 'inbox' | 'folder' | 'calendar' | 'chart' | 'person' | 'settings' | 'bell' | 'lock' | 'info' | 'circle-check' | 'alert' | 'chevron-left' | 'trend-up' | 'trend-down' | 'edit' | 'copy' | 'trash' | 'upload' | 'filter' | 'logout';
+export type IconName = 'chevron-right' | 'chevron-down' | 'arrow-right' | 'search' | 'check' | 'xmark' | 'plus' | 'more' | 'home' | 'inbox' | 'folder' | 'calendar' | 'chart' | 'person' | 'settings' | 'bell' | 'lock' | 'info' | 'circle-check' | 'alert' | 'chevron-left' | 'trend-up' | 'trend-down' | 'edit' | 'copy' | 'trash' | 'upload' | 'filter' | 'logout' | 'file';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; icon?: IconName; iconRight?: IconName; shortcut?: string; block?: boolean }
 export declare function Button(props: ButtonProps): React.ReactElement;
@@ -118,7 +118,7 @@ export declare function CommandPalette(props: { items: CommandItem[]; placeholde
 export interface DrawerProps { title: React.ReactNode; description?: React.ReactNode; side?: 'right' | 'left'; footer?: React.ReactNode; overlay?: boolean; /** Keep it rendered and toggle this to animate it in and out. */ open?: boolean; onClose?: (() => void) | null; children?: React.ReactNode; className?: string }
 export declare function Drawer(props: DrawerProps): React.ReactElement | null;
 /** Large centered screen for editing and details: up to 1200 x 800, full screen on phones. Always modal. */
-export interface ModalProps { title: React.ReactNode; description?: React.ReactNode; footer?: React.ReactNode; /** Keep it rendered and toggle this to animate it in and out. */ open?: boolean; /** Called on Esc, the close button and a click on the scrim. */ onClose?: () => void; children?: React.ReactNode; className?: string }
+export interface ModalProps { /** 'lg' is up to 1200 x 800, 'md' 720 wide and as tall as its content. */ size?: 'lg' | 'md'; title: React.ReactNode; description?: React.ReactNode; footer?: React.ReactNode; /** Keep it rendered and toggle this to animate it in and out. */ open?: boolean; /** Called on Esc, the close button and a click on the scrim. */ onClose?: () => void; children?: React.ReactNode; className?: string }
 export declare function Modal(props: ModalProps): React.ReactElement | null;
 
 // ---- Charts ----
@@ -133,10 +133,38 @@ export declare function Sparkline(props: { data: number[]; width?: number; heigh
 
 // ---- Dates ----
 /** Dates are ISO strings ('2026-11-01') so nothing shifts with time zones. */
-export interface CalendarEvent { id?: string; date: string; title: string; time?: string; tone?: 'success' | 'warning' | 'danger' }
-export interface CalendarProps { size?: 'lg' | 'sm'; value?: string; defaultValue?: string; onChange?: (date: string) => void; month?: string; defaultMonth?: string; onMonthChange?: (month: string) => void; events?: CalendarEvent[]; onEventClick?: (event: CalendarEvent) => void; maxEvents?: number; weekStartsOn?: 0 | 1; autoFocus?: boolean; className?: string }
+/** Events without `time` are all-day. `time` and `end` are 'HH:MM'; without `end` an event lasts an hour. */
+export interface CalendarEvent { id?: string; date: string; title: string; time?: string; end?: string; tone?: 'success' | 'warning' | 'danger'; [key: string]: unknown }
+export type CalendarView = 'month' | 'week' | 'day';
+export interface CalendarProps { size?: 'lg' | 'sm'; value?: string; defaultValue?: string; onChange?: (date: string) => void;
+  /** The date in view; the month, week or day around it is shown. */ date?: string; defaultDate?: string; onDateChange?: (date: string) => void;
+  view?: CalendarView; defaultView?: CalendarView; onViewChange?: (view: CalendarView) => void; /** Shows a Month/Week/Day switch in the header. */ views?: CalendarView[];
+  events?: CalendarEvent[]; onEventClick?: (event: CalendarEvent) => void;
+  /** Right-click on a day (and in week and day view, on a half hour, passed as 'HH:MM'). */ dayMenu?: (date: string, time?: string) => MenuItem[];
+  /** Right-click on an event. */ eventMenu?: (event: CalendarEvent) => MenuItem[];
+  maxEvents?: number; weekStartsOn?: 0 | 1; /** Week and day view open scrolled to this hour. Default 7. */ scrollToHour?: number; /** Clicking a day in week view opens it in day view. Default true. */ dayFromWeek?: boolean; autoFocus?: boolean; className?: string }
 export declare function Calendar(props: CalendarProps): React.ReactElement;
 export interface DatePickerProps { label?: string; hint?: string; error?: string; placeholder?: string; value?: string; defaultValue?: string; onChange?: (date: string) => void; weekStartsOn?: 0 | 1; name?: string; disabled?: boolean; id?: string; 'aria-label'?: string; className?: string }
 export declare function DatePicker(props: DatePickerProps): React.ReactElement;
 
-declare global { interface Window { Klar: { Button: typeof Button; TextField: typeof TextField; SearchField: typeof SearchField; Checkbox: typeof Checkbox; Switch: typeof Switch; SegmentedControl: typeof SegmentedControl; List: typeof List; ListRow: typeof ListRow; Card: typeof Card; Badge: typeof Badge; ProgressBar: typeof ProgressBar; Topbar: typeof Topbar; Sidebar: typeof Sidebar; NavList: typeof NavList; SettingsSection: typeof SettingsSection; Dialog: typeof Dialog; Icon: typeof Icon; Kbd: typeof Kbd; Textarea: typeof Textarea; Select: typeof Select; Dropdown: typeof Dropdown; RadioGroup: typeof RadioGroup; Slider: typeof Slider; Avatar: typeof Avatar; AvatarGroup: typeof AvatarGroup; Tooltip: typeof Tooltip; Tabs: typeof Tabs; Stat: typeof Stat; Table: typeof Table; EmptyState: typeof EmptyState; Skeleton: typeof Skeleton; Spinner: typeof Spinner; Pagination: typeof Pagination; Accordion: typeof Accordion; Callout: typeof Callout; Toast: typeof Toast; Toaster: typeof Toaster; MenuPanel: typeof MenuPanel; Menu: typeof Menu; ContextMenu: typeof ContextMenu; CommandPalette: typeof CommandPalette; Drawer: typeof Drawer; Modal: typeof Modal; LineChart: typeof LineChart; BarChart: typeof BarChart; BarList: typeof BarList; Sparkline: typeof Sparkline; Calendar: typeof Calendar; DatePicker: typeof DatePicker; toast: ToastFn; setStrings: typeof setStrings; setTheme: typeof setTheme; locales: typeof locales } } }
+// ---- Popover and notifications ----
+export interface PopoverProps { trigger: React.ReactElement; children: React.ReactNode | ((close: () => void) => React.ReactNode); open?: boolean; defaultOpen?: boolean; onOpenChange?: (open: boolean) => void; align?: 'start' | 'end'; width?: number; /** Used to decide whether it opens upward. */ estimateHeight?: number; 'aria-label'?: string; className?: string }
+export declare function Popover(props: PopoverProps): React.ReactElement;
+export interface NotificationItem { id: string; title: React.ReactNode; description?: React.ReactNode; time?: string; read?: boolean; icon?: IconName; /** A person's name, shown as an Avatar instead of the icon. */ avatar?: string; [key: string]: unknown }
+export declare function NotificationInbox(props: { items: NotificationItem[]; title?: string; onRead?: (id: string) => void; onReadAll?: () => void; onItemClick?: (item: NotificationItem) => void; className?: string }): React.ReactElement;
+
+// ---- Boards, inputs and activity ----
+export interface KanbanColumn<T extends { id: string } = { id: string; title?: string }> { id: string; title: React.ReactNode; items: T[]; action?: React.ReactNode }
+/** onMove's `toIndex` is the card's place in the target column after it has left its old one. */
+export declare function Kanban<T extends { id: string }>(props: { columns: KanbanColumn<T>[]; onMove?: (id: string, toColumn: string, toIndex: number) => void; onCardClick?: (item: T, column: KanbanColumn<T>) => void; renderCard?: (item: T, column: KanbanColumn<T>) => React.ReactNode; emptyText?: string; className?: string }): React.ReactElement;
+export interface MultiSelectProps { label?: string; hint?: string; error?: string; placeholder?: string; options: Array<string | { value: string; label: string; description?: string; disabled?: boolean }>; value?: string[]; defaultValue?: string[]; onChange?: (values: string[]) => void; max?: number; name?: string; disabled?: boolean; id?: string; 'aria-label'?: string; className?: string }
+export declare function MultiSelect(props: MultiSelectProps): React.ReactElement;
+export interface FileItem { id?: string; name: string; size?: number; /** 0-1 while uploading; 1 or left out when done. */ progress?: number; error?: string }
+export interface FileDropProps { label?: string; hint?: string; /** Like the accept attribute: '.pdf,image/*'. */ accept?: string; multiple?: boolean; /** Bytes. */ maxSize?: number; onFiles?: (files: File[]) => void; files?: FileItem[]; onRemove?: (id: string) => void; name?: string; disabled?: boolean; className?: string }
+export declare function FileDrop(props: FileDropProps): React.ReactElement;
+export interface TimelineItem { id?: string; title: React.ReactNode; description?: React.ReactNode; time?: string; icon?: IconName; avatar?: string }
+export declare function Timeline(props: { items: TimelineItem[]; 'aria-label'?: string; className?: string }): React.ReactElement;
+export interface StepperProps { steps: Array<{ id?: string; label: string; description?: string }>; /** Index of the current step. */ current: number; /** Lets people go back to a completed step. */ onStepClick?: (index: number) => void; 'aria-label'?: string; className?: string }
+export declare function Stepper(props: StepperProps): React.ReactElement;
+
+declare global { interface Window { Klar: { Button: typeof Button; TextField: typeof TextField; SearchField: typeof SearchField; Checkbox: typeof Checkbox; Switch: typeof Switch; SegmentedControl: typeof SegmentedControl; List: typeof List; ListRow: typeof ListRow; Card: typeof Card; Badge: typeof Badge; ProgressBar: typeof ProgressBar; Topbar: typeof Topbar; Sidebar: typeof Sidebar; NavList: typeof NavList; SettingsSection: typeof SettingsSection; Dialog: typeof Dialog; Icon: typeof Icon; Kbd: typeof Kbd; Textarea: typeof Textarea; Select: typeof Select; Dropdown: typeof Dropdown; RadioGroup: typeof RadioGroup; Slider: typeof Slider; Avatar: typeof Avatar; AvatarGroup: typeof AvatarGroup; Tooltip: typeof Tooltip; Tabs: typeof Tabs; Stat: typeof Stat; Table: typeof Table; EmptyState: typeof EmptyState; Skeleton: typeof Skeleton; Spinner: typeof Spinner; Pagination: typeof Pagination; Accordion: typeof Accordion; Callout: typeof Callout; Toast: typeof Toast; Toaster: typeof Toaster; MenuPanel: typeof MenuPanel; Menu: typeof Menu; ContextMenu: typeof ContextMenu; CommandPalette: typeof CommandPalette; Drawer: typeof Drawer; Modal: typeof Modal; LineChart: typeof LineChart; BarChart: typeof BarChart; BarList: typeof BarList; Sparkline: typeof Sparkline; Calendar: typeof Calendar; DatePicker: typeof DatePicker; Popover: typeof Popover; NotificationInbox: typeof NotificationInbox; Kanban: typeof Kanban; MultiSelect: typeof MultiSelect; FileDrop: typeof FileDrop; Timeline: typeof Timeline; Stepper: typeof Stepper; toast: ToastFn; setStrings: typeof setStrings; setTheme: typeof setTheme; locales: typeof locales } } }
