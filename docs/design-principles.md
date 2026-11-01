@@ -45,6 +45,13 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 - Editing and details open in a `Modal` in the center (up to 1200 x 800), never in a panel from the side.
 - On mobile: hide the sidebar behind a menu button; use `lg` buttons.
 
+## Charts
+
+- Monochrome like everything else: the series that matters in `primary`, at most one comparison in `border-strong` (dashed when it is a line). Color in a chart only ever means status, and then with a word.
+- Thin marks: 2 px lines, columns at most 24 px with 4 px rounded tops, 2 px between neighbours. Gridlines are 1 px `border` hairlines; axis text is 11 px `text-muted`.
+- One y-axis. A legend when there are two series, none for one. Values in tooltips, never on every point.
+- Every chart is interactive (crosshair or highlighted column with a tooltip) and has a hidden table for screen readers.
+
 ## Scrollbars
 
 - Thin, without a track, and the thumb (`fill-hover`) only shows while the pointer is over the area that scrolls. Never hidden for good: people need to see where they are in a long list.
@@ -85,6 +92,8 @@ Install with `npm install github:vweje/klar`, import `klar/styles.css`, and impo
 
 - App shell: `Sidebar`, `Topbar`, `NavList` (sub-navigation), `Tabs`, `Pagination`, `SettingsSection`.
 - Input: `TextField`, `Textarea`, `Dropdown` (custom select), `Select` (native), `SearchField`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `SegmentedControl`.
+- Charts: `LineChart`, `BarChart`, `BarList`, `Sparkline`.
+- Dates: `Calendar`, `DatePicker`.
 - Content and data: `List`/`ListRow`, `Table`, `Card`, `Stat`, `Badge`, `Avatar`/`AvatarGroup`, `Accordion`, `Kbd`, `Tooltip`.
 - Actions and menus: `Button`, `Menu` (dropdown), `ContextMenu` (right-click), `CommandPalette` (⌘K).
 - Layers: `Dialog` for decisions, `Modal` for editing and details in the center, `Drawer` when the list behind must stay visible.

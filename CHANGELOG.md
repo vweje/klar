@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Charts: `LineChart`, `BarChart`, `BarList` and `Sparkline`. Monochrome, at most two series, thin marks, hover tooltips and a hidden table for screen readers. `Stat` takes a `chart`.
+- Dates: `Calendar` (month view with events, or a compact grid) and `DatePicker`, with ISO date values and full keyboard support. `setStrings()` now also sets the locale for dates and numbers.
+- `Menu` opens as a fixed layer, so tables, Modals and scrolling areas no longer clip it, and it opens upward when there is no room.
+- The command palette is 720 px wide with room for more results.
+- The demo has a Reports page and a Calendar page, and due dates use the DatePicker.
 - `Dropdown`: a custom select that matches Klar's menus, with icons, descriptions, groups, search, full keyboard support and the same motion as menus. Its list is more compact and lighter than an action menu (30 px options, 13 px). It never gets clipped inside a `Modal`.
 - `Table` takes `rowMenu`: a right-click anywhere on a row opens its menu, and the row stays highlighted while it is open.
 - `ContextMenu` stays inside the window near the edges, and nested right-click areas no longer open two menus.

@@ -16,10 +16,25 @@ Recipes for common screens and situations - which components to use and how to c
 - `Card` for everything else (charts, activity, goals with `ProgressBar`).
 - See the [live demo](../examples/index.html) for the full composition.
 
+## Reports
+
+- `h1` with a one-line summary and a `SegmentedControl` for the period (7 days, 30 days, 12 months) on the right. Every number on the page follows the period, and every change is compared with the period before.
+- First row: `Stat` tiles with a `Sparkline` in `chart` - the number, its change, and its shape.
+- Below, `Card`s on a 12-column grid: the main trend as a `LineChart` (this period in `primary`, the previous one dashed) across 8 columns, a ranked `BarList` across 4, then pairs across 6 each.
+- At most two series per chart. Never two y-axes: two measures with different scales get two charts.
+- The card's eyebrow names the measure and its title states the headline number.
+
+## Calendar
+
+- `Calendar` across the content with a `List` of the selected day's plan in a 300 px column on the right; on phones the list goes below.
+- Deadlines come straight from the tasks, meetings show their time. Clicking a task opens it in the `Modal`; dates inside forms use `DatePicker`.
+- Give the page its own URL (`#calendar`) and open on today.
+
 ## Forms
 
 - One column, max about 480 px wide; fields separated by `space-4`, groups by `space-8` with an `h3` above.
 - Label above the field, always. Help text below (`hint`); an error replaces the help text (`error`).
+- Dates: `DatePicker`, never a free text field.
 - Choices: `Dropdown` for five or more options (with `search` from about eight), `RadioGroup` or `SegmentedControl` for 2-4 visible ones, `Checkbox` for yes/no that is saved, `Switch` for yes/no that takes effect immediately.
 - Buttons at the bottom right: secondary "Cancel" first, primary "Save" last. On mobile: `lg` and `block`.
 - Validate on blur or on submit - never while the user is typing for the first time.

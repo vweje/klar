@@ -20,7 +20,13 @@ var en = {
   searchCommands: "Search commands",
   noResults: "No results for",
   navigate: "navigate",
-  select: "select"
+  select: "select",
+  locale: "en-US",
+  today: "Today",
+  previousMonth: "Previous month",
+  nextMonth: "Next month",
+  more: "more",
+  chooseDate: "Choose a date"
 };
 var da = {
   search: "S\xF8g",
@@ -37,7 +43,13 @@ var da = {
   searchCommands: "S\xF8g kommandoer",
   noResults: "Ingen resultater for",
   navigate: "naviger",
-  select: "v\xE6lg"
+  select: "v\xE6lg",
+  locale: "da-DK",
+  today: "I dag",
+  previousMonth: "Forrige m\xE5ned",
+  nextMonth: "N\xE6ste m\xE5ned",
+  more: "flere",
+  chooseDate: "V\xE6lg en dato"
 };
 var locales = { en, da };
 var strings = Object.assign({}, en);
@@ -619,11 +631,14 @@ function Dropdown(p) {
     }
     document.addEventListener("mousedown", off);
     window.addEventListener("scroll", scroll, true);
-    window.addEventListener("resize", off);
+    function resize() {
+      hide(false);
+    }
+    window.addEventListener("resize", resize);
     return function() {
       document.removeEventListener("mousedown", off);
       window.removeEventListener("scroll", scroll, true);
-      window.removeEventListener("resize", off);
+      window.removeEventListener("resize", resize);
     };
   }, [open[0]]);
   R.useEffect(function() {
@@ -867,7 +882,7 @@ function Stat(p) {
     "div",
     { className: cx("k-stat", p.className) },
     h("div", { className: "k-stat__label" }, p.icon ? h(Icon, { name: p.icon, size: 15 }) : null, p.label),
-    h("div", { className: "k-stat__value" }, p.value),
+    p.chart ? h("div", { className: "k-stat__value-row" }, h("div", { className: "k-stat__value" }, p.value), p.chart) : h("div", { className: "k-stat__value" }, p.value),
     p.delta || p.caption ? h(
       "div",
       { className: "k-stat__foot" },
@@ -1045,6 +1060,7 @@ function MenuPanel(p) {
     {
       ref,
       className: cx("k-menu", p.nested && "k-menu--nested", flip[0] && "k-menu--flip", p.className),
+      style: p.style,
       role: "menu",
       onKeyDown: p.nested ? function(e) {
         if (e.key === "ArrowLeft" && p.onBack) {
@@ -1105,8 +1121,25 @@ function MenuPanel(p) {
   );
 }
 function Menu(p) {
-  var st = useState2(!!p.defaultOpen), open = st[0], ref = R.useRef(null);
+  var st = useState2(!!p.defaultOpen), open = st[0], ref = R.useRef(null), panel = R.useRef(null), pos = useState2(null);
   var presence = usePresence(open, "duration-fast");
+  var end = p.align === "end";
+  function place() {
+    if (!ref.current) return;
+    var r = ref.current.getBoundingClientRect();
+    var estimate = Math.min(360, (p.items || []).length * 32 + 8);
+    var below = window.innerHeight - r.bottom, up = below < estimate + 12 && r.top > below;
+    pos[1]({
+      up,
+      top: up ? void 0 : r.bottom + 6,
+      bottom: up ? window.innerHeight - r.top + 6 : void 0,
+      left: end ? void 0 : r.left,
+      right: end ? window.innerWidth - r.right : void 0
+    });
+  }
+  useIsoLayout(function() {
+    if (open && !pos[0]) place();
+  }, [open]);
   R.useEffect(function() {
     if (!open) return;
     function off(e) {
@@ -1115,25 +1148,47 @@ function Menu(p) {
     function esc(e) {
       if (e.key === "Escape") st[1](false);
     }
+    function scroll(e) {
+      if (!panel.current || !panel.current.contains(e.target)) st[1](false);
+    }
     document.addEventListener("mousedown", off);
     document.addEventListener("keydown", esc);
+    function resize() {
+      st[1](false);
+    }
+    window.addEventListener("scroll", scroll, true);
+    window.addEventListener("resize", resize);
     return function() {
       document.removeEventListener("mousedown", off);
       document.removeEventListener("keydown", esc);
+      window.removeEventListener("scroll", scroll, true);
+      window.removeEventListener("resize", resize);
     };
   }, [open]);
   if (!p.trigger) return h(MenuPanel, p);
+  var at = pos[0];
   return h(
     "span",
     { ref, className: cx("k-dropdown", "k-dropdown--" + (p.align || "start")), onClick: function(e) {
       e.stopPropagation();
     } },
     R.cloneElement(p.trigger, { onClick: function() {
+      if (!open) place();
       st[1](!open);
     }, "aria-haspopup": "menu", "aria-expanded": open }),
-    presence.show ? h(MenuPanel, { items: p.items, defaultOpenSub: p.defaultOpenSub, onClose: function() {
-      st[1](false);
-    }, className: cx("k-dropdown__panel", presence.leaving && "k-leaving") }) : null
+    presence.show && at ? h(
+      "div",
+      { ref: panel },
+      h(MenuPanel, {
+        items: p.items,
+        defaultOpenSub: p.defaultOpenSub,
+        onClose: function() {
+          st[1](false);
+        },
+        className: cx("k-dropdown__panel", at.up && "k-dropdown__panel--up", presence.leaving && "k-leaving"),
+        style: { top: at.top, bottom: at.bottom, left: at.left, right: at.right }
+      })
+    ) : null
   );
 }
 function CommandPalette(p) {
@@ -1406,23 +1461,541 @@ function Modal(p) {
   );
   return h("div", { className: cx("k-scrim", presence.leaving && "k-leaving"), onMouseDown: onScrimDown(p.onClose) }, panel);
 }
+function compactNumber(n) {
+  try {
+    return new Intl.NumberFormat(strings.locale, { notation: "compact", maximumFractionDigits: 1 }).format(n);
+  } catch (e) {
+    return String(n);
+  }
+}
+function niceScale(max, count) {
+  if (!(max > 0)) return [0, 1];
+  var raw = max / count, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), norm = raw / mag;
+  var step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+  var ticks = [];
+  for (var v = 0; v < max + step / 2; v += step) ticks.push(Math.round(v * 1e6) / 1e6);
+  if (ticks[ticks.length - 1] < max) ticks.push(Math.round((ticks[ticks.length - 1] + step) * 1e6) / 1e6);
+  return ticks;
+}
+function useWidth() {
+  var ref = R.useRef(null), st = useState2(0);
+  useIsoLayout(function() {
+    var el = ref.current;
+    if (!el) return;
+    st[1](el.clientWidth);
+    if (typeof ResizeObserver === "undefined") return;
+    var ro = new ResizeObserver(function(entries) {
+      st[1](Math.round(entries[0].contentRect.width));
+    });
+    ro.observe(el);
+    return function() {
+      ro.disconnect();
+    };
+  }, []);
+  return [ref, st[0]];
+}
+function chartSeries(p) {
+  return (p.series && p.series.length ? p.series : [{ key: "value", label: p["aria-label"] || "Value" }]).slice(0, 2);
+}
+function ChartLegend(p) {
+  if (p.series.length < 2) return null;
+  return h("div", { className: "k-chart__legend" }, p.series.map(function(s, i) {
+    return h("span", { key: s.key, className: "k-chart__legend-item" }, h("span", { className: cx("k-chart__key", "k-chart__key--" + p.kind, "k-chart__key--" + (i + 1)) }), s.label);
+  }));
+}
+function ChartTable(p) {
+  return h(
+    "table",
+    { className: "k-sr-only" },
+    p.label ? h("caption", null, p.label) : null,
+    h("thead", null, h("tr", null, h("th", null, ""), p.series.map(function(s) {
+      return h("th", { key: s.key }, s.label);
+    }))),
+    h("tbody", null, p.data.map(function(d, i) {
+      return h("tr", { key: i }, h("th", null, d.label), p.series.map(function(s) {
+        return h("td", { key: s.key }, p.format(d[s.key]));
+      }));
+    }))
+  );
+}
+function ChartTip(p) {
+  if (!p.at) return null;
+  var d = p.data[p.at.index];
+  var align = p.at.x < 100 ? "start" : p.width && p.at.x > p.width - 100 ? "end" : "center";
+  return h(
+    "div",
+    { className: "k-chart__tip k-chart__tip--" + align, style: { left: p.at.x, top: p.at.y } },
+    h("p", { className: "k-chart__tip-title" }, d.label),
+    p.series.map(function(s, i) {
+      return h(
+        "p",
+        { key: s.key, className: "k-chart__tip-row" },
+        h("span", { className: cx("k-chart__key", "k-chart__key--" + p.kind, "k-chart__key--" + (i + 1)) }),
+        h("span", { className: "k-chart__tip-label" }, s.label),
+        h("strong", null, p.format(d[s.key]))
+      );
+    })
+  );
+}
+function useChartFrame(p, width) {
+  var data = p.data || [], series = chartSeries(p), height = p.height || 240;
+  var max = data.reduce(function(m, d) {
+    return series.reduce(function(n, s) {
+      return Math.max(n, +d[s.key] || 0);
+    }, m);
+  }, 0);
+  var ticks = niceScale(max, 4), top = ticks[ticks.length - 1] || 1;
+  var axis = p.formatAxis || compactNumber;
+  var longest = ticks.reduce(function(n, t) {
+    return Math.max(n, String(axis(t)).length);
+  }, 1);
+  var left = longest * 7 + 14, right = 8, pad = 8, bottom = 28;
+  var iw = Math.max(0, width - left - right), ih = height - pad - bottom;
+  return {
+    data,
+    series,
+    height,
+    ticks,
+    axis,
+    left,
+    iw,
+    ih,
+    pad,
+    y: function(v) {
+      return pad + ih - Math.max(0, +v || 0) / top * ih;
+    },
+    grid: ticks.map(function(t) {
+      var yy = pad + ih - t / top * ih;
+      return h(
+        "g",
+        { key: "t" + t },
+        h("line", { className: "k-chart__grid", x1: left, x2: left + iw, y1: yy, y2: yy }),
+        h("text", { className: "k-chart__axis", x: left - 8, y: yy, textAnchor: "end", dominantBaseline: "middle" }, axis(t))
+      );
+    }),
+    // Thin out the category labels so they never collide.
+    labelEvery: Math.max(1, Math.ceil(data.length / Math.max(1, Math.floor(iw / 64))))
+  };
+}
+function LineChart(p) {
+  var w = useWidth(), width = w[1], hover = useState2(null);
+  var f = useChartFrame(p, width), data = f.data, n = data.length, fmt = p.format || compactNumber;
+  var x = function(i) {
+    return f.left + (n <= 1 ? f.iw / 2 : i * f.iw / (n - 1));
+  };
+  function move(e) {
+    if (!n) return;
+    var r = e.currentTarget.getBoundingClientRect(), mx = e.clientX - r.left;
+    var i = n <= 1 ? 0 : Math.max(0, Math.min(n - 1, Math.round((mx - f.left) / (f.iw / (n - 1)))));
+    hover[1]({ index: i, x: x(i), y: f.pad });
+  }
+  var at = hover[0] && hover[0].index < n ? hover[0] : null;
+  return h(
+    "figure",
+    { ref: w[0], className: cx("k-chart", p.className), "aria-label": p["aria-label"] },
+    h(ChartLegend, { series: f.series, kind: "line" }),
+    h(
+      "div",
+      { className: "k-chart__plot", style: { height: f.height } },
+      width ? h(
+        "svg",
+        { width, height: f.height, "aria-hidden": true, onMouseMove: move, onMouseLeave: function() {
+          hover[1](null);
+        } },
+        f.grid,
+        data.map(function(d, i) {
+          return i % f.labelEvery ? null : h("text", { key: "x" + i, className: "k-chart__axis", x: x(i), y: f.pad + f.ih + 18, textAnchor: n <= 1 ? "middle" : i === 0 ? "start" : i === n - 1 ? "end" : "middle" }, d.label);
+        }),
+        p.area && n > 1 ? h("path", { className: "k-chart__area", d: data.map(function(d, i) {
+          return (i ? "L" : "M") + x(i) + "," + f.y(d[f.series[0].key]);
+        }).join("") + "L" + x(n - 1) + "," + f.y(0) + "L" + x(0) + "," + f.y(0) + "Z" }) : null,
+        f.series.slice().reverse().map(function(s) {
+          var i = f.series.indexOf(s);
+          return h("path", { key: s.key, className: cx("k-chart__line", "k-chart__line--" + (i + 1)), d: data.map(function(d, j) {
+            return (j ? "L" : "M") + x(j) + "," + f.y(d[s.key]);
+          }).join("") });
+        }),
+        at ? h(
+          "g",
+          null,
+          h("line", { className: "k-chart__cross", x1: at.x, x2: at.x, y1: f.pad, y2: f.pad + f.ih }),
+          f.series.map(function(s, i) {
+            return h("circle", { key: s.key, className: cx("k-chart__dot", "k-chart__dot--" + (i + 1)), cx: at.x, cy: f.y(data[at.index][s.key]), r: 4 });
+          })
+        ) : null
+      ) : null,
+      h(ChartTip, { at, width, data, series: f.series, format: fmt, kind: "line" })
+    ),
+    h(ChartTable, { label: p["aria-label"], data, series: f.series, format: fmt })
+  );
+}
+function barPath(x, y, w, base) {
+  var r = Math.min(4, w / 2, base - y);
+  if (base - y <= 0) return "";
+  return "M" + x + "," + base + "V" + (y + r) + "Q" + x + "," + y + " " + (x + r) + "," + y + "H" + (x + w - r) + "Q" + (x + w) + "," + y + " " + (x + w) + "," + (y + r) + "V" + base + "Z";
+}
+function BarChart(p) {
+  var w = useWidth(), width = w[1], hover = useState2(null);
+  var f = useChartFrame(p, width), data = f.data, n = data.length || 1, s = f.series.length, fmt = p.format || compactNumber;
+  var band = f.iw / n, gap = 2;
+  var barW = Math.max(2, Math.min(24, (band * 0.64 - (s - 1) * gap) / s)), groupW = s * barW + (s - 1) * gap;
+  var base = f.pad + f.ih, at = hover[0] && hover[0].index < data.length ? hover[0] : null;
+  return h(
+    "figure",
+    { ref: w[0], className: cx("k-chart", p.className), "aria-label": p["aria-label"] },
+    h(ChartLegend, { series: f.series, kind: "bar" }),
+    h(
+      "div",
+      { className: "k-chart__plot", style: { height: f.height } },
+      width ? h(
+        "svg",
+        { width, height: f.height, "aria-hidden": true, onMouseLeave: function() {
+          hover[1](null);
+        } },
+        f.grid,
+        data.map(function(d, i) {
+          var gx = f.left + i * band + (band - groupW) / 2, dim = at && at.index !== i;
+          return h(
+            "g",
+            { key: i, className: cx("k-chart__group", dim && "k-chart__group--dim") },
+            h("rect", {
+              className: "k-chart__hit",
+              x: f.left + i * band,
+              y: f.pad,
+              width: band,
+              height: f.ih,
+              onMouseEnter: function() {
+                hover[1]({ index: i, x: f.left + i * band + band / 2, y: f.pad });
+              }
+            }),
+            f.series.map(function(ser, j) {
+              return h("path", { key: ser.key, className: cx("k-chart__bar", "k-chart__bar--" + (j + 1)), d: barPath(gx + j * (barW + gap), f.y(d[ser.key]), barW, base) });
+            }),
+            i % f.labelEvery ? null : h("text", { className: "k-chart__axis", x: f.left + i * band + band / 2, y: base + 18, textAnchor: "middle" }, d.label)
+          );
+        })
+      ) : null,
+      h(ChartTip, { at, width, data, series: f.series, format: fmt, kind: "bar" })
+    ),
+    h(ChartTable, { label: p["aria-label"], data, series: f.series, format: fmt })
+  );
+}
+function BarList(p) {
+  var items = p.items || [], fmt = p.format || function(v) {
+    return Number(v).toLocaleString(strings.locale);
+  };
+  var max = items.reduce(function(m, it) {
+    return Math.max(m, +it.value || 0);
+  }, 0) || 1;
+  return h("ul", { className: cx("k-barlist", p.className), "aria-label": p["aria-label"] }, items.map(function(it, i) {
+    return h(
+      "li",
+      { key: it.id || it.label || i, className: "k-barlist__row" },
+      h("span", { className: "k-barlist__bar", style: { width: Math.max(0, (+it.value || 0) / max * 100) + "%" } }),
+      h("span", { className: "k-barlist__label" }, it.icon ? h(Icon, { name: it.icon, size: 14 }) : null, it.label),
+      h("span", { className: "k-barlist__value" }, fmt(it.value))
+    );
+  }));
+}
+function Sparkline(p) {
+  var data = p.data || [], width = p.width || 96, height = p.height || 28, n = data.length;
+  if (n < 2) return null;
+  var min = Math.min.apply(null, data), max = Math.max.apply(null, data), span = max - min || 1;
+  var x = function(i) {
+    return 2 + i * (width - 6) / (n - 1);
+  }, y = function(v) {
+    return 3 + (1 - (v - min) / span) * (height - 6);
+  };
+  return h(
+    "svg",
+    { className: cx("k-spark", p.className), width, height, role: "img", "aria-label": p.label },
+    h("path", { className: "k-spark__line", d: data.map(function(v, i) {
+      return (i ? "L" : "M") + x(i) + "," + y(v);
+    }).join("") }),
+    h("circle", { className: "k-spark__dot", cx: x(n - 1), cy: y(data[n - 1]), r: 2.5 })
+  );
+}
+function pad2(n) {
+  return n < 10 ? "0" + n : String(n);
+}
+function toISODate(d) {
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+function fromISODate(s) {
+  if (!s) return null;
+  if (s instanceof Date) return new Date(s.getFullYear(), s.getMonth(), s.getDate());
+  var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+function addDays(d, n) {
+  var r = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  r.setDate(r.getDate() + n);
+  return r;
+}
+function formatDate(d, opts) {
+  try {
+    return new Intl.DateTimeFormat(strings.locale, opts).format(d);
+  } catch (e) {
+    return toISODate(d);
+  }
+}
+function monthDays(month, weekStart) {
+  var first = new Date(month.getFullYear(), month.getMonth(), 1);
+  var offset = (first.getDay() - weekStart + 7) % 7, inMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  var weeks = Math.ceil((offset + inMonth) / 7), days = [];
+  for (var i = 0; i < weeks * 7; i++) days.push(addDays(first, i - offset));
+  return days;
+}
+function Calendar(p) {
+  var small = p.size === "sm", weekStart = p.weekStartsOn != null ? p.weekStartsOn : 1;
+  var todayISO = toISODate(/* @__PURE__ */ new Date());
+  var sel = useControlled(p.value, p.defaultValue), selected = sel[0];
+  var start = fromISODate(p.defaultMonth) || fromISODate(selected) || fromISODate(todayISO);
+  var mon = useControlled(p.month, toISODate(new Date(start.getFullYear(), start.getMonth(), 1)));
+  var month = fromISODate(mon[0]);
+  var focus = useState2(selected || todayISO), grid = R.useRef(null), keyNav = R.useRef(!!p.autoFocus);
+  var byDay = {};
+  (p.events || []).forEach(function(ev) {
+    var k = toISODate(fromISODate(ev.date));
+    (byDay[k] = byDay[k] || []).push(ev);
+  });
+  function setMonth(d) {
+    var iso = toISODate(new Date(d.getFullYear(), d.getMonth(), 1));
+    mon[1](iso);
+    if (p.onMonthChange) p.onMonthChange(iso);
+  }
+  function pick(iso) {
+    sel[1](iso);
+    focus[1](iso);
+    if (p.onChange) p.onChange(iso);
+  }
+  function moveFocus(d) {
+    keyNav.current = true;
+    focus[1](toISODate(d));
+    if (d.getMonth() !== month.getMonth() || d.getFullYear() !== month.getFullYear()) setMonth(d);
+  }
+  function onKey(e) {
+    var f = fromISODate(focus[0]);
+    var moves = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+    if (moves[e.key] != null) {
+      e.preventDefault();
+      moveFocus(addDays(f, moves[e.key]));
+    } else if (e.key === "PageUp" || e.key === "PageDown") {
+      e.preventDefault();
+      moveFocus(new Date(f.getFullYear(), f.getMonth() + (e.key === "PageUp" ? -1 : 1), Math.min(f.getDate(), 28)));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      moveFocus(addDays(f, -((f.getDay() - weekStart + 7) % 7)));
+    } else if (e.key === "End") {
+      e.preventDefault();
+      moveFocus(addDays(f, 6 - (f.getDay() - weekStart + 7) % 7));
+    }
+  }
+  R.useEffect(function() {
+    if (!keyNav.current || !grid.current) return;
+    var el = grid.current.querySelector('[data-date="' + focus[0] + '"]');
+    if (el) el.focus();
+  }, [focus[0], mon[0]]);
+  var days = monthDays(month, weekStart);
+  var focusInView = days.some(function(d) {
+    return toISODate(d) === focus[0];
+  });
+  var tabbable = focusInView ? focus[0] : toISODate(new Date(month.getFullYear(), month.getMonth(), 1));
+  var max = p.maxEvents || 3;
+  return h(
+    "div",
+    { className: cx("k-cal", small ? "k-cal--sm" : "k-cal--lg", p.className) },
+    h(
+      "div",
+      { className: "k-cal__head" },
+      h("h3", { className: "k-cal__title", "aria-live": "polite" }, formatDate(month, { month: "long", year: "numeric" })),
+      h(
+        "div",
+        { className: "k-cal__nav" },
+        small ? null : h(Button, { size: "sm", variant: "secondary", onClick: function() {
+          setMonth(fromISODate(todayISO));
+          focus[1](todayISO);
+        } }, strings.today),
+        h(Button, { size: "sm", variant: "ghost", icon: "chevron-left", "aria-label": strings.previousMonth, onClick: function() {
+          setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1));
+        } }),
+        h(Button, { size: "sm", variant: "ghost", icon: "chevron-right", "aria-label": strings.nextMonth, onClick: function() {
+          setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1));
+        } })
+      )
+    ),
+    h("div", { className: "k-cal__weekdays", "aria-hidden": true }, days.slice(0, 7).map(function(d, i) {
+      return h("span", { key: i }, formatDate(d, { weekday: small ? "narrow" : "short" }));
+    })),
+    h("div", { ref: grid, className: "k-cal__grid", role: "grid", onKeyDown: small ? onKey : void 0 }, days.map(function(d) {
+      var iso = toISODate(d), out = d.getMonth() !== month.getMonth(), evs = byDay[iso] || [];
+      var cls = cx("k-cal__day", out && "k-cal__day--out", iso === todayISO && "k-cal__day--today", iso === selected && "k-cal__day--selected");
+      if (small) {
+        return h(
+          "button",
+          {
+            key: iso,
+            type: "button",
+            className: cls,
+            "data-date": iso,
+            role: "gridcell",
+            tabIndex: iso === tabbable ? 0 : -1,
+            "aria-selected": iso === selected,
+            "aria-label": formatDate(d, { dateStyle: "full" }),
+            onClick: function() {
+              pick(iso);
+            }
+          },
+          d.getDate(),
+          evs.length ? h("span", { className: "k-cal__dot", "aria-hidden": true }) : null
+        );
+      }
+      return h(
+        "div",
+        { key: iso, className: cls, role: "gridcell", "aria-selected": iso === selected, onClick: function() {
+          pick(iso);
+        } },
+        h("span", { className: "k-cal__num" }, d.getDate()),
+        evs.slice(0, max).map(function(ev, i) {
+          return h(
+            "button",
+            {
+              key: ev.id || i,
+              type: "button",
+              className: "k-cal__event",
+              title: ev.title,
+              onClick: function(e) {
+                e.stopPropagation();
+                if (p.onEventClick) p.onEventClick(ev);
+              }
+            },
+            ev.tone ? h("span", { className: "k-cal__tone k-cal__tone--" + ev.tone, "aria-hidden": true }) : null,
+            ev.time ? h("span", { className: "k-cal__time" }, ev.time) : null,
+            h("span", { className: "k-cal__event-title" }, ev.title)
+          );
+        }),
+        evs.length > max ? h("span", { className: "k-cal__more" }, "+" + (evs.length - max) + " " + strings.more) : null
+      );
+    }))
+  );
+}
+function DatePicker(p) {
+  var auto = R.useId(), id = p.id || auto;
+  var st = useControlled(p.value, p.defaultValue), v = st[0];
+  var open = useState2(false), pos = useState2(null);
+  var presence = usePresence(open[0], "duration-fast");
+  var wrap = R.useRef(null), trigger = R.useRef(null), panel = R.useRef(null);
+  var date = fromISODate(v), note = p.error || p.hint;
+  function show() {
+    if (p.disabled || !trigger.current) return;
+    var r = trigger.current.getBoundingClientRect(), panelHeight = 330;
+    var below = window.innerHeight - r.bottom, up = below < panelHeight + 12 && r.top > below;
+    pos[1]({ left: Math.min(r.left, window.innerWidth - 296), top: up ? void 0 : r.bottom + 6, bottom: up ? window.innerHeight - r.top + 6 : void 0, up });
+    open[1](true);
+  }
+  function hide(refocus) {
+    open[1](false);
+    if (refocus && trigger.current) trigger.current.focus();
+  }
+  R.useEffect(function() {
+    if (!open[0]) return;
+    function off(e) {
+      if (wrap.current && !wrap.current.contains(e.target)) hide(false);
+    }
+    function scroll(e) {
+      if (!panel.current || !panel.current.contains(e.target)) hide(false);
+    }
+    document.addEventListener("mousedown", off);
+    window.addEventListener("scroll", scroll, true);
+    function resize() {
+      hide(false);
+    }
+    window.addEventListener("resize", resize);
+    return function() {
+      document.removeEventListener("mousedown", off);
+      window.removeEventListener("scroll", scroll, true);
+      window.removeEventListener("resize", resize);
+    };
+  }, [open[0]]);
+  return h(
+    "div",
+    { ref: wrap, className: cx("k-field", p.error && "k-field--error", p.className) },
+    p.label ? h("label", { className: "k-field__label", htmlFor: id, onClick: function(e) {
+      e.preventDefault();
+      if (trigger.current) trigger.current.focus();
+    } }, p.label) : null,
+    h(
+      "button",
+      {
+        ref: trigger,
+        id,
+        type: "button",
+        disabled: p.disabled,
+        className: cx("k-input k-dd__trigger", !date && "k-dd__trigger--empty"),
+        "aria-haspopup": "dialog",
+        "aria-expanded": open[0],
+        "aria-label": p.label ? void 0 : p["aria-label"],
+        "aria-invalid": p.error ? true : void 0,
+        "aria-describedby": note ? id + "-note" : void 0,
+        onClick: function() {
+          if (open[0]) hide(false);
+          else show();
+        },
+        onKeyDown: function(e) {
+          if (!open[0] && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            show();
+          }
+        }
+      },
+      h("span", { className: "k-dd__value" }, date ? formatDate(date, { dateStyle: "medium" }) : p.placeholder || strings.chooseDate),
+      h(Icon, { name: "calendar", size: 15, className: "k-dd__chev" })
+    ),
+    p.name ? h("input", { type: "hidden", name: p.name, value: v || "" }) : null,
+    note ? h("p", { id: id + "-note", className: "k-field__note" }, p.error ? h(Icon, { name: "info", size: 13 }) : null, note) : null,
+    presence.show && pos[0] ? h("div", {
+      ref: panel,
+      role: "dialog",
+      "aria-label": p.label || p["aria-label"] || strings.chooseDate,
+      className: cx("k-datepicker", pos[0].up && "k-datepicker--up", presence.leaving && "k-leaving"),
+      style: { left: pos[0].left, top: pos[0].top, bottom: pos[0].bottom },
+      // Stop here so Esc closes the picker without closing a Modal around it.
+      onKeyDown: function(e) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          hide(true);
+        }
+      }
+    }, h(Calendar, { size: "sm", autoFocus: true, value: v, weekStartsOn: p.weekStartsOn, onChange: function(iso) {
+      st[1](iso);
+      if (p.onChange) p.onChange(iso);
+      hide(true);
+    } })) : null
+  );
+}
 export {
   Accordion,
   Avatar,
   AvatarGroup,
   Badge,
+  BarChart,
+  BarList,
   Button,
+  Calendar,
   Callout,
   Card,
   Checkbox,
   CommandPalette,
   ContextMenu,
+  DatePicker,
   Dialog,
   Drawer,
   Dropdown,
   EmptyState,
   Icon,
   Kbd,
+  LineChart,
   List,
   ListRow,
   Menu,
@@ -1439,6 +2012,7 @@ export {
   Sidebar,
   Skeleton,
   Slider,
+  Sparkline,
   Spinner,
   Stat,
   Switch,

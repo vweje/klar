@@ -7,3 +7,5 @@ KPI card for dashboards: label, big number and change.
 - `trend` describes whether the change is good or bad - not its direction. More overdue tasks is `down`.
 
 The consumer provides: `label`, `value` (formatted), and optionally `delta`, `trend`, `caption`, `icon`. Put 3-4 in a grid.
+
+`chart` puts a small chart to the right of the value - usually a `Sparkline` of the same measure.

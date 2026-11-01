@@ -279,6 +279,94 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-stat__delta--down { color: var(--danger); }
 .k-stat__delta--flat { color: var(--text-secondary); }
 .k-stat__caption { font-weight: 500; color: var(--text-muted); }
+.k-stat__value-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); }
+
+/* Charts: monochrome, thin marks, recessive grid. Series 1 is primary, series 2 border-strong (dashed for lines). */
+.k-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.k-chart { position: relative; margin: 0; min-width: 0; }
+.k-chart__plot { position: relative; overflow-x: clip; overflow-y: visible; }
+.k-chart svg { display: block; overflow: visible; }
+.k-chart__legend { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-3); font-size: 12px; line-height: 16px; font-weight: 700; color: var(--text-secondary); }
+.k-chart__legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.k-chart__key { flex: none; display: inline-block; }
+.k-chart__key--bar { width: 10px; height: 10px; border-radius: 2px; }
+.k-chart__key--line { width: 14px; height: 0; border-top: 2px solid; }
+.k-chart__key--bar.k-chart__key--1 { background: var(--primary); }
+.k-chart__key--bar.k-chart__key--2 { background: var(--border-strong); }
+.k-chart__key--line.k-chart__key--1 { border-color: var(--primary); }
+.k-chart__key--line.k-chart__key--2 { border-top-style: dashed; border-color: var(--border-strong); }
+.k-chart__grid { stroke: var(--border); stroke-width: 1; shape-rendering: crispEdges; }
+.k-chart__axis { fill: var(--text-muted); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.k-chart__line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.k-chart__line--1 { stroke: var(--primary); }
+.k-chart__line--2 { stroke: var(--border-strong); stroke-dasharray: 4 4; }
+.k-chart__area { fill: var(--primary); opacity: .08; }
+.k-chart__cross { stroke: var(--border-strong); stroke-width: 1; shape-rendering: crispEdges; }
+.k-chart__dot { stroke: var(--surface); stroke-width: 2; }
+.k-chart__dot--1 { fill: var(--primary); }
+.k-chart__dot--2 { fill: var(--border-strong); }
+.k-chart__bar--1 { fill: var(--primary); }
+.k-chart__bar--2 { fill: var(--border-strong); }
+.k-chart__hit { fill: transparent; }
+.k-chart__group { transition: opacity var(--duration-fast) var(--ease-out); }
+.k-chart__group--dim { opacity: .35; }
+.k-chart__tip { position: absolute; z-index: var(--z-tooltip); min-width: 140px; padding: var(--space-2) var(--space-3); transform: translate(-50%, calc(-100% - 8px)); background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); pointer-events: none; white-space: nowrap; animation: k-fade-in var(--duration-fast) var(--ease-out); }
+.k-chart__tip--start { transform: translate(12px, 0); }
+.k-chart__tip--end { transform: translate(calc(-100% - 12px), 0); }
+.k-chart__tip-title { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: var(--text); }
+.k-chart__tip-row { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; line-height: 18px; color: var(--text-secondary); }
+.k-chart__tip-label { flex: 1; }
+.k-chart__tip-row strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.k-spark { display: block; overflow: visible; }
+.k-spark__line { fill: none; stroke: var(--primary); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.k-spark__dot { fill: var(--primary); stroke: var(--surface); stroke-width: 2; }
+.k-barlist { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.k-barlist__row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); height: 32px; padding: 0 var(--space-3); font-size: 13px; }
+.k-barlist__bar { position: absolute; inset: 0 auto 0 0; border-radius: var(--radius-xs); background: var(--fill); }
+.k-barlist__label, .k-barlist__value { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.k-barlist__label { font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-barlist__value { flex: none; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+/* Calendar: month grid with hairlines; the small size is the date picker's grid */
+.k-cal__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.k-cal__title { margin: 0; font-size: 16px; line-height: 22px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+.k-cal__nav { display: flex; align-items: center; gap: 2px; }
+.k-cal__nav .k-btn--secondary { margin-right: var(--space-2); }
+.k-cal__weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-secondary); }
+.k-cal--lg .k-cal__weekdays span { padding: 0 var(--space-2) var(--space-2); }
+.k-cal--lg .k-cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; overflow: hidden; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.k-cal--lg .k-cal__day { display: flex; flex-direction: column; gap: 3px; min-width: 0; min-height: 112px; padding: 6px; box-sizing: border-box; background: var(--surface); cursor: pointer; transition: background-color var(--duration-fast) var(--ease-out); }
+.k-cal--lg .k-cal__day:hover { background: var(--canvas); }
+.k-cal--lg .k-cal__day--out { background: var(--canvas); }
+.k-cal--lg .k-cal__day--out .k-cal__num { color: var(--text-muted); }
+.k-cal--lg .k-cal__day--selected { box-shadow: inset 0 0 0 2px var(--primary); }
+.k-cal__num { display: inline-grid; place-items: center; align-self: flex-start; min-width: 24px; height: 24px; padding: 0 4px; box-sizing: border-box; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.k-cal__day--today .k-cal__num { background: var(--primary); color: var(--on-primary); }
+.k-cal__event { display: flex; align-items: center; gap: 5px; width: 100%; min-width: 0; height: 20px; padding: 0 6px; border: 0; border-radius: var(--radius-xs); background: var(--fill); font: inherit; font-size: 12px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; transition: background-color var(--duration-fast) var(--ease-out); }
+.k-cal__event:hover { background: var(--fill-hover); }
+.k-cal__event-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-cal__time { flex: none; font-weight: 500; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.k-cal__tone { flex: none; width: 6px; height: 6px; border-radius: var(--radius-full); }
+.k-cal__tone--success { background: var(--success); }
+.k-cal__tone--warning { background: var(--warning); }
+.k-cal__tone--danger { background: var(--danger); }
+.k-cal__more { padding: 0 6px; font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+.k-cal--sm { width: 252px; }
+.k-cal--sm .k-cal__head { margin-bottom: var(--space-2); }
+.k-cal--sm .k-cal__title { font-size: 14px; line-height: 20px; }
+.k-cal--sm .k-cal__weekdays { text-align: center; padding-bottom: 4px; }
+.k-cal--sm .k-cal__grid { display: grid; grid-template-columns: repeat(7, 36px); gap: 0; }
+.k-cal--sm .k-cal__day { position: relative; width: 36px; height: 34px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.k-cal--sm .k-cal__day:hover { background: var(--fill); }
+.k-cal--sm .k-cal__day--out { color: var(--text-muted); }
+.k-cal--sm .k-cal__day--today { box-shadow: inset 0 0 0 1px var(--border-strong); }
+.k-cal--sm .k-cal__day--selected, .k-cal--sm .k-cal__day--selected:hover { background: var(--primary); color: var(--on-primary); box-shadow: none; }
+.k-cal--sm .k-cal__day:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.k-cal__dot { position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: var(--radius-full); background: currentColor; opacity: .6; }
+.k-datepicker { position: fixed; z-index: var(--z-dropdown); padding: var(--space-3); background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); transform-origin: top left; animation: k-drop-in var(--duration-base) var(--ease-out); }
+.k-datepicker--up { transform-origin: bottom left; animation-name: k-rise-in; }
+.k-datepicker.k-leaving { animation: k-drop-out var(--duration-fast) var(--ease-in) forwards; pointer-events: none; }
+@media (max-width: 720px) { .k-cal--lg .k-cal__day { min-height: 64px; } .k-cal--lg .k-cal__event-title, .k-cal--lg .k-cal__time { display: none; } .k-cal--lg .k-cal__event { width: 8px; height: 8px; padding: 0; border-radius: var(--radius-full); background: var(--text-secondary); } .k-cal--lg .k-cal__event .k-cal__tone { display: none; } }
 
 /* Table */
 .k-table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); }
@@ -372,17 +460,15 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-menu__check { flex: none; display: grid; place-items: center; width: 15px; color: var(--text); }
 .k-menu__check svg { color: var(--text); }
 .k-dropdown { position: relative; display: inline-flex; }
-.k-dropdown__panel { position: absolute; top: calc(100% + 6px); z-index: var(--z-dropdown); }
-.k-dropdown--start .k-dropdown__panel { left: 0; }
-.k-dropdown--end .k-dropdown__panel { right: 0; }
+.k-dropdown__panel { position: fixed; z-index: var(--z-dropdown); }
 
 /* Command palette */
 .k-scrim--top { place-items: start center; padding-top: 12vh; }
-.k-cmdk { width: 560px; max-width: 100%; overflow: hidden; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+.k-cmdk { width: 720px; max-width: 100%; overflow: hidden; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
 .k-cmdk__search { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 var(--space-4); border-bottom: 1px solid var(--border); color: var(--text-secondary); }
 .k-cmdk__input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; font: inherit; font-size: 15px; font-weight: 600; color: var(--text); outline: none; }
 .k-cmdk__input::placeholder { color: var(--text-muted); font-weight: 500; }
-.k-cmdk__list { max-height: 320px; overflow-y: auto; padding: 4px; }
+.k-cmdk__list { max-height: 420px; overflow-y: auto; padding: 4px; }
 .k-cmdk__empty { margin: 0; padding: var(--space-6); text-align: center; color: var(--text-secondary); }
 .k-cmdk__foot { display: flex; gap: var(--space-4); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--border); background: var(--canvas); font-size: 12px; font-weight: 600; color: var(--text-secondary); }
 .k-cmdk__foot .k-kbd { height: 18px; margin-right: 2px; padding: 0 4px; }
@@ -437,6 +523,8 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-scrim--left.k-leaving > .k-drawer { animation: k-slide-out-left var(--duration-base) var(--ease-in) forwards; }
 .k-dropdown__panel { transform-origin: top left; animation: k-drop-in var(--duration-base) var(--ease-out); }
 .k-dropdown--end .k-dropdown__panel { transform-origin: top right; }
+.k-dropdown__panel--up { transform-origin: bottom left; animation-name: k-rise-in; }
+.k-dropdown--end .k-dropdown__panel--up { transform-origin: bottom right; }
 .k-ctx > .k-menu { transform-origin: top left; animation: k-drop-in var(--duration-base) var(--ease-out); }
 .k-dropdown__panel.k-leaving, .k-ctx.k-leaving > .k-menu { animation: k-drop-out var(--duration-fast) var(--ease-in) forwards; pointer-events: none; }
 .k-menu--nested { animation: k-fade-in var(--duration-fast) var(--ease-out); }
@@ -465,6 +553,6 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
-  .k-scrim, .k-scrim > *, .k-dropdown__panel, .k-dd__panel, .k-ctx > .k-menu, .k-menu--nested, .k-toasts__item, .k-acc__body, .k-check__box .k-icon { animation: none !important; }
+  .k-scrim, .k-scrim > *, .k-dropdown__panel, .k-dd__panel, .k-datepicker, .k-chart__tip, .k-ctx > .k-menu, .k-menu--nested, .k-toasts__item, .k-acc__body, .k-check__box .k-icon { animation: none !important; }
   .k-skel, .k-spinner { animation-duration: 3s; }
 }

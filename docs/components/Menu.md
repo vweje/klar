@@ -6,6 +6,6 @@ Dropdown menu of actions. Can be shown as a standalone panel or with a button th
 - Submenus: an item with `items` gets a chevron and opens a new menu to the right (hover, click or →; ← closes). One level at most.
 - `checked` shows a checkmark in front of items - for single choices like status or sorting.
 - `{ heading }` adds a heading, `{ separator: true }` a divider, `danger: true` colors the item `danger` (put it last).
-- With `trigger`, the button opens the menu below itself (`align: 'start' | 'end'`); clicking outside or Esc closes it.
+- With `trigger`, the button opens the menu below itself (`align: 'start' | 'end'`), or above it when there is no room. The panel is `position: fixed`, so tables, Modals and scrolling areas never clip it. Clicking outside, Esc or scrolling the page closes it.
 
 The consumer provides: `items` (`label`, `icon`, `shortcut`, `danger`, `disabled`, `checked`, `items`, `onSelect`), and optionally `trigger` and `align`. `MenuPanel` is the panel alone.

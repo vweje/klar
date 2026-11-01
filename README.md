@@ -6,7 +6,7 @@
 
 <p align="center">
   A sharp, monochrome design system for React.<br>
-  Tokens, 44 components, and themes for Tailwind v4 and shadcn/ui.
+  Tokens, 50 components, and themes for Tailwind v4 and shadcn/ui.
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@
 
 Klar (Danish for *clear*) is black and white by design: thin borders, small radii, compact controls and bold type set in Manrope. There is no accent color - contrast does the work, and color only ever means status.
 
-- **44 React components** - forms, a custom dropdown, tables with right-click rows, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers, settings pages and toast notifications.
+- **50 React components** - forms, a custom dropdown, a date picker, charts, a calendar, tables with right-click rows, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers, settings pages and toast notifications.
 - **Design tokens** as CSS variables, with light and dark mode out of the box.
 - **Drop-in themes** for Tailwind v4 and shadcn/ui, so existing projects can adopt the look without a rewrite.
 - **Zero dependencies** besides React 18+. Works with the Next.js App Router, Vite, or a plain `<script>` tag.
@@ -87,6 +87,8 @@ The package ships with `"use client"`, so components without function props (`Ca
 | --- | --- |
 | **Layout** | `Sidebar` `Topbar` `NavList` `SettingsSection` `Tabs` `Pagination` |
 | **Inputs** | `TextField` `Textarea` `Dropdown` `Select` `SearchField` `Checkbox` `RadioGroup` `Switch` `Slider` `SegmentedControl` |
+| **Charts** | `LineChart` `BarChart` `BarList` `Sparkline` |
+| **Dates** | `Calendar` `DatePicker` |
 | **Data display** | `Table` `List` `ListRow` `Card` `Stat` `Badge` `Avatar` `AvatarGroup` `Accordion` `Tooltip` `Kbd` `Icon` |
 | **Actions and menus** | `Button` `Menu` `MenuPanel` `ContextMenu` `CommandPalette` |
 | **Overlays** | `Dialog` `Modal` `Drawer` |
@@ -141,6 +143,27 @@ toast({
     { value: 'noah', label: 'Noah Bennett', description: 'Frontend' },
   ]}
 />
+```
+
+**Charts**
+
+```tsx
+<LineChart
+  aria-label="Revenue per day"
+  area
+  format={(v) => `$${v.toLocaleString()}`}
+  series={[{ key: 'now', label: 'This period' }, { key: 'before', label: 'Previous period' }]}
+  data={[{ label: 'Nov 1', now: 1820, before: 1610 }, { label: 'Nov 2', now: 2140, before: 1700 }]}
+/>
+
+<Stat label="Revenue" value="$48,250" delta="+12.4%" trend="up" chart={<Sparkline data={last12} label="Revenue trend" />} />
+```
+
+**Calendar and date picker**
+
+```tsx
+<Calendar events={[{ date: '2026-11-04', time: '10:00', title: 'Design review' }]} onEventClick={open} />
+<DatePicker label="Due" value={due} onChange={setDue} />
 ```
 
 **Table**
