@@ -51,16 +51,29 @@
     var statuses = ['In progress', 'Due soon', 'Done', 'Overdue'];
 
     function setTheme(dark) { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; }
+    // Shared with the Klar site, so the demo and the page around it always show the same theme.
+    function savedTheme() { try { return localStorage.getItem('klar-theme'); } catch (e) { return null; } }
+    function saveTheme(dark) { try { localStorage.setItem('klar-theme', dark ? 'dark' : 'light'); } catch (e) {} }
 
     function App() {
       var tasks = React.useState(initialTasks);
       var tab = React.useState('all');
-      var dark = React.useState(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var dark = React.useState(savedTheme() ? savedTheme() === 'dark' : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
       var palette = React.useState(false);
       var drawer = React.useState(null);
       var confirm = React.useState(null);
 
       React.useEffect(function () { setTheme(dark[0]); }, [dark[0]]);
+      React.useEffect(function () {
+        function onMessage(e) { if (e.origin === location.origin && e.data && e.data.klarTheme) dark[1](e.data.klarTheme === 'dark'); }
+        window.addEventListener('message', onMessage);
+        return function () { window.removeEventListener('message', onMessage); };
+      }, []);
+      function chooseDark(value) {
+        dark[1](value);
+        saveTheme(value);
+        if (window.parent !== window) window.parent.postMessage({ klarTheme: value ? 'dark' : 'light' }, location.origin);
+      }
       React.useEffect(function () {
         function onKey(e) { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette[1](true); } }
         document.addEventListener('keydown', onKey);
@@ -109,7 +122,7 @@
         h('div', { className: 'main' },
           h(K.Topbar, { breadcrumb: ['Workspace'], title: 'Overview', actions: h(React.Fragment, null,
             h(K.Tooltip, { content: 'Search', shortcut: '⌘K', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'search', 'aria-label': 'Search', onClick: function () { palette[1](true); } })),
-            h(K.Switch, { 'aria-label': 'Dark mode', checked: dark[0], onChange: dark[1] }),
+            h(K.Switch, { 'aria-label': 'Dark mode', checked: dark[0], onChange: chooseDark }),
             h(K.Button, { size: 'sm', icon: 'plus', shortcut: 'C', onClick: function () { drawer[1]({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); } }, 'New task')) }),
           h('div', { className: 'content' }, h('div', { className: 'inner' },
             h('div', { className: 'head' },
@@ -142,7 +155,7 @@
               h('p', { className: 'hint' }, 'Tip: right-click a task name, open the ⋯ menu, or press ⌘K.'))))),
         palette[0] ? h(K.CommandPalette, { overlay: true, autoFocus: true, onClose: function () { palette[1](false); }, items: [
           { group: 'Suggestions', label: 'New task', icon: 'plus', shortcut: 'C', onSelect: function () { palette[1](false); drawer[1]({ id: 'KL-150', name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); } },
-          { group: 'Suggestions', label: dark[0] ? 'Switch to light mode' : 'Switch to dark mode', icon: 'settings', onSelect: function () { palette[1](false); dark[1](!dark[0]); } },
+          { group: 'Suggestions', label: dark[0] ? 'Switch to light mode' : 'Switch to dark mode', icon: 'settings', onSelect: function () { palette[1](false); chooseDark(!dark[0]); } },
           { group: 'Go to', label: 'Overview', icon: 'home', shortcut: 'G O', onSelect: function () { palette[1](false); } },
           { group: 'Go to', label: 'Inbox', icon: 'inbox', shortcut: 'G I', onSelect: function () { palette[1](false); } },
           { group: 'Go to', label: 'Calendar', icon: 'calendar', shortcut: 'G C', onSelect: function () { palette[1](false); } },
