@@ -47,6 +47,8 @@
     .card__meta { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--text-secondary); }
     .card__id { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
     .wizard__step { display: flex; flex-direction: column; gap: var(--space-4); padding-top: var(--space-2); animation: k-reveal var(--duration-base) var(--ease-out); }
+    .range-filter { width: 280px; }
+    .qr { width: 132px; height: 132px; border-radius: var(--radius-sm); background: repeating-conic-gradient(var(--text) 0% 25%, var(--surface) 0% 50%) 0 0 / 22px 22px; border: 8px solid var(--surface); box-shadow: 0 0 0 1px var(--border); }
     .calendar-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-6); align-items: start; }
     .set-narrow { width: 320px; max-width: 100%; }
     .set-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-self: stretch; }
@@ -114,6 +116,17 @@
       { id: 'n3', icon: 'person', title: 'You were assigned Audit color contrast', time: 'Yesterday', read: true, taskId: 'KL-124' },
       { id: 'n4', icon: 'chart', title: 'Your weekly summary is ready', description: '86 tasks completed this month.', time: 'Monday', read: true }
     ];
+    // A pretend server: 200 companies, answered after a short delay.
+    var clientNames = (function () {
+      var a = ['Nord', 'Blå', 'Lys', 'Klar', 'Grøn', 'Fjord', 'Skov', 'Havn', 'Sten', 'Vind'], b = ['data', 'byg', 'design', 'energi', 'logistik', 'medie', 'mad', 'rådgivning', 'software', 'tekstil'], c = ['ApS', 'A/S', 'Group', 'Studio'], out = [];
+      for (var i = 0; i < 200; i++) out.push(a[i % 10] + b[Math.floor(i / 10) % 10] + ' ' + c[Math.floor(i / 100) * 2 + i % 2]);
+      return out;
+    })();
+    function searchClients(q) {
+      return new Promise(function (done) { setTimeout(function () {
+        done(clientNames.filter(function (n) { return n.toLowerCase().indexOf(q.toLowerCase()) >= 0; }).slice(0, 8).map(function (n, i) { return { value: n, label: n, description: (12 + n.length * 7 + i) + ' employees', icon: 'home' }; }));
+      }, 350); });
+    }
     var labelOptions = ['Design', 'Frontend', 'Backend', 'Copy', 'Bug', 'Research', 'Marketing'];
     var tone = { 'In progress': 'neutral', 'Done': 'success', 'Overdue': 'danger', 'Due soon': 'warning' };
     var statuses = ['In progress', 'Due soon', 'Done', 'Overdue'];
@@ -157,7 +170,7 @@
 
     function readRoute() {
       var parts = location.hash.slice(1).split('/');
-      if (parts[0] === 'calendar' || parts[0] === 'reports') return { view: parts[0], page: 'profile' };
+      if (['calendar', 'reports', 'inbox', 'timeline'].indexOf(parts[0]) >= 0) return { view: parts[0], page: 'profile' };
       if (parts[0] !== 'settings') return { view: 'home', page: 'profile' };
       return { view: 'settings', page: settingsPages[parts[1]] ? parts[1] : 'profile' };
     }
@@ -177,13 +190,15 @@
       var lang = React.useState('en');
       // Settings live here, so they survive moving between pages.
       var profile = React.useState({ name: people.ava, title: 'Product designer', email: 'ava@example.com' });
-      var workspace = React.useState({ name: 'Acme', url: 'acme' });
+      var workspace = React.useState({ name: 'Acme', url: 'acme', budget: 48500, hours: 37 });
       var prefs = React.useState({ assigned: true, mentions: true, summary: false, product: false, desktop: true, sound: false, twoFactor: true, startPage: 'home', dateFormat: 'Nov 1, 2026', weekStart: 'Monday' });
       var palette = React.useState(false);
       var editing = React.useState(null);
       var editorKey = React.useState(0);
       var confirm = React.useState(null);
       var layout = React.useState('list');
+      var selection = React.useState([]);
+      var meetingForm = React.useState(null), meetingKey = React.useState(0);
       var meetings = React.useState(initialMeetings);
       var notifications = React.useState(initialNotifications);
       var projects = React.useState([{ id: 'p1', label: 'Website', icon: 'folder', count: 12 }, { id: 'p2', label: 'Mobile app', icon: 'folder', count: 4 }, { id: 'p3', label: 'Archive', icon: 'folder' }]);
@@ -207,7 +222,7 @@
       function navigate(nextView, page) {
         var next = { view: nextView, page: page || settingsPage };
         route[1](next);
-        var hash = next.view === 'settings' ? '#settings/' + next.page : next.view === 'calendar' || next.view === 'reports' ? '#' + next.view : '';
+        var hash = next.view === 'settings' ? '#settings/' + next.page : ['calendar', 'reports', 'inbox', 'timeline'].indexOf(next.view) >= 0 ? '#' + next.view : '';
         history.replaceState(null, '', hash || location.pathname + location.search);
       }
       function go(id) { navigate(id); }
@@ -279,12 +294,27 @@
                   h('span', { className: 'k-kanban__card-title' }, t.name),
                   h('span', { className: 'card__meta' }, h(K.Avatar, { name: people[t.owner], size: 'sm' }), h('span', null, shortDate(t.due, lang[0])), h('span', { className: 'card__id' }, t.id))));
             } })
-          : visible.length ? h(K.Table, { onRowClick: function (r) { openEditor(r); }, rowMenu: rowMenu, columns: [
-            { key: 'name', label: 'Task', strong: true },
-            { key: 'owner', label: 'Owner', render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.owner], size: 'sm' }), people[r.owner]); } },
-            { key: 'status', label: 'Status', render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } },
-            { key: 'due', label: 'Due', render: function (r) { return shortDate(r.due, lang[0]); } },
-            { key: 'id', label: 'ID', mono: true, align: 'right' },
+          : visible.length ? h(K.Table, { 'aria-label': 'Tasks', onRowClick: function (r) { openEditor(r); }, rowMenu: rowMenu, selectable: true, columnToggle: true,
+            selected: selection[0], onSelectedChange: selection[1],
+            bulkActions: function (rows) {
+              return h(React.Fragment, null,
+                h(K.Button, { size: 'sm', variant: 'secondary', icon: 'check', onClick: function () {
+                  var ids = rows.map(function (r) { return r.id; });
+                  tasks[1](tasks[0].map(function (t) { return ids.indexOf(t.id) >= 0 ? Object.assign({}, t, { status: 'Done' }) : t; }));
+                  selection[1]([]); K.toast.success(rows.length + (rows.length === 1 ? ' task' : ' tasks') + ' marked as done');
+                } }, 'Mark as done'),
+                h(K.Button, { size: 'sm', variant: 'secondary', icon: 'trash', onClick: function () {
+                  var before = tasks[0], ids = rows.map(function (r) { return r.id; });
+                  tasks[1](before.filter(function (t) { return ids.indexOf(t.id) < 0; })); selection[1]([]);
+                  K.toast({ title: rows.length + (rows.length === 1 ? ' task' : ' tasks') + ' deleted', duration: 7000, action: h(K.Button, { size: 'sm', variant: 'secondary', onClick: function () { tasks[1](before); } }, 'Undo') });
+                } }, 'Delete'));
+            },
+            columns: [
+            { key: 'name', label: 'Task', strong: true, sortable: true, hideable: false },
+            { key: 'owner', label: 'Owner', sortable: true, sortValue: function (r) { return people[r.owner]; }, render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.owner], size: 'sm' }), people[r.owner]); } },
+            { key: 'status', label: 'Status', sortable: true, render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } },
+            { key: 'due', label: 'Due', sortable: true, render: function (r) { return shortDate(r.due, lang[0]); } },
+            { key: 'id', label: 'ID', mono: true, align: 'right', sortable: true },
             { key: 'menu', label: '', width: 48, align: 'right', render: function (r) {
               return h('span', { onClick: function (e) { e.stopPropagation(); } },
                 h(K.Menu, { align: 'end', items: rowMenu(r), trigger: h(K.Button, { size: 'sm', variant: 'ghost', icon: 'more', 'aria-label': 'Actions for ' + r.name }) }));
@@ -302,11 +332,12 @@
             { id: 'inbox', label: 'Inbox', icon: 'inbox', count: 4 },
             { id: 'calendar', label: 'Calendar', icon: 'calendar' },
             { id: 'reports', label: 'Reports', icon: 'chart' },
+            { id: 'timeline', label: 'Timeline', icon: 'list' },
             { id: 'settings', label: 'Settings', icon: 'settings' },
             { section: 'Projects' }].concat(projects[0]),
           footer: h('div', { className: 'me' }, h(K.Avatar, { name: profile[0].name || '?', status: 'online' }), h('div', null, profile[0].name, h('small', null, 'Pro plan'))) }),
         h('div', { className: 'main' },
-          h(K.Topbar, { breadcrumb: onSettings ? ['Workspace', 'Settings'] : ['Workspace'], title: onSettings ? settingsPages[settingsPage].title : view === 'calendar' ? 'Calendar' : view === 'reports' ? 'Reports' : 'Overview', actions: h(React.Fragment, null,
+          h(K.Topbar, { breadcrumb: onSettings ? ['Workspace', 'Settings'] : ['Workspace'], title: onSettings ? settingsPages[settingsPage].title : view === 'calendar' ? 'Calendar' : view === 'reports' ? 'Reports' : view === 'inbox' ? 'Inbox' : view === 'timeline' ? 'Timeline' : 'Overview', actions: h(React.Fragment, null,
             h(K.Tooltip, { content: 'Search', shortcut: '⌘K', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'search', 'aria-label': 'Search', onClick: function () { palette[1](true); } })),
             onSettings ? null : h(K.Tooltip, { content: 'Settings', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'settings', 'aria-label': 'Settings', onClick: function () { openSettings(); } })),
             h(K.NotificationInbox, { items: notifications[0],
@@ -318,9 +349,11 @@
           h('div', { className: 'content' },
             onSettings ? h(Settings, { page: settingsPage, onPage: openSettings, profile: profile[0], onSaveProfile: profile[1], workspace: workspace[0], onSaveWorkspace: workspace[1], prefs: prefs[0], onPref: setPref, theme: theme[0], onTheme: chooseTheme, lang: lang[0], onLang: chooseLang })
               : view === 'reports' ? h(Reports, { lang: lang[0] })
+              : view === 'inbox' ? h(InboxPage, { lang: lang[0] })
+              : view === 'timeline' ? h(TimelinePage, { tasks: tasks[0], onOpenTask: openEditor })
               : view === 'calendar' ? h(CalendarPage, { tasks: tasks[0], meetings: meetings[0], lang: lang[0], weekStart: prefs[0].weekStart, onOpenTask: openEditor,
                   onNewTask: function (date) { newTask(date); },
-                  onNewMeeting: function (date, time) { var start = +time.slice(0, 2), end = String(Math.min(23, start + 1)).padStart(2, '0') + time.slice(2); meetings[1](meetings[0].concat([{ id: 'm' + Date.now(), date: date, time: time, end: end, title: 'New meeting' }])); K.toast.success('Meeting added at ' + time); },
+                  onNewMeeting: function (date, time) { var start = +time.slice(0, 2), end = String(Math.min(23, start + 1)).padStart(2, '0') + time.slice(2); meetingKey[1](function (k) { return k + 1; }); meetingForm[1]({ date: date, time: time, end: end }); },
                   onMoveTask: function (id, date) { update(id, { due: date }); K.toast.success('Moved to ' + shortDate(date, lang[0])); },
                   onTaskStatus: function (id, s) { update(id, { status: s }); K.toast.success('Status set to ' + s); },
                   onMoveMeeting: function (id, date) { meetings[1](meetings[0].map(function (m) { return m.id === id ? Object.assign({}, m, { date: date }) : m; })); K.toast.success('Meeting moved to ' + shortDate(date, lang[0])); },
@@ -345,6 +378,9 @@
         lastConfirm.current ? h(K.Dialog, { overlay: true, open: !!confirm[0], onClose: function () { confirm[1](null); }, title: 'Delete task?', message: '"' + lastConfirm.current.name + '" will be permanently deleted.', actions: [
           { label: 'Cancel', variant: 'secondary', onClick: function () { confirm[1](null); } },
           { label: 'Delete task', variant: 'danger', onClick: function () { remove(lastConfirm.current); confirm[1](null); } }] }) : null,
+        meetingForm[0] || meetingKey[0] ? h(MeetingModal, { key: meetingKey[0], open: !!meetingForm[0], date: (meetingForm[0] || {}).date, time: (meetingForm[0] || {}).time, end: (meetingForm[0] || {}).end,
+          onClose: function () { meetingForm[1](null); },
+          onSave: function (m) { meetings[1](meetings[0].concat([{ id: 'm' + Date.now(), date: m.date, time: m.time, end: m.end, title: m.title }])); meetingForm[1](null); K.toast.success({ title: 'Meeting added', description: m.title + ' · ' + m.time + (m.end ? '–' + m.end : '') }); } }) : null,
         h(ProjectWizard, { key: wizardKey[0], open: wizard[0], onClose: function () { wizard[1](false); }, onCreate: function (proj) {
           projects[1](projects[0].concat([{ id: 'p' + Date.now(), label: proj.name, icon: 'folder' }]));
           wizard[1](false);
@@ -354,7 +390,7 @@
     }
 
     function TaskEditor(p) {
-      var draft = React.useState(Object.assign({ notes: '', labels: [], files: [] }, p.task));
+      var draft = React.useState(Object.assign({ notes: '', labels: [], files: [], comments: [{ id: 'c1', author: people.mia, time: 'Today at 9:40 AM', body: 'Can we keep the old hero image until the new one is **approved**? @Ava Thompson' }] }, p.task));
       var error = React.useState('');
       var timers = React.useRef([]);
       React.useEffect(function () { return function () { timers.current.forEach(clearInterval); }; }, []);
@@ -385,9 +421,13 @@
         h('div', { className: 'task' },
           h('div', { className: 'task__main' },
             h(K.TextField, { label: 'Name', value: draft[0].name, onChange: set('name'), placeholder: 'What needs to be done?', error: error[0] || undefined, autoFocus: true }),
-            h(K.Textarea, { label: 'Notes', rows: 6, maxLength: 2000, value: draft[0].notes, onChange: set('notes'), placeholder: 'Add details, links and decisions for the team' }),
+            h(K.MarkdownEditor, { label: 'Notes', rows: 6, maxLength: 2000, value: draft[0].notes, onChange: set('notes'), people: Object.keys(people).map(function (k) { return people[k]; }), placeholder: 'Add details, links and decisions. Type @ to mention someone.' }),
             h(K.FileDrop, { label: 'Attachments', hint: 'PDF, PNG or JPG up to 10 MB', accept: '.pdf,image/*', maxSize: 10 * 1024 * 1024, multiple: true,
               files: draft[0].files, onFiles: upload, onRemove: function (id) { patchFiles(function (list) { return list.filter(function (f) { return f.id !== id; }); }); } }),
+            t.isNew ? null : h('div', { className: 'k-field' },
+              h('span', { className: 'k-field__label' }, 'Comments'),
+              h(K.CommentThread, { people: Object.keys(people).map(function (k) { return people[k]; }), currentUser: people.ava, comments: draft[0].comments,
+                onSubmit: function (body) { draft[1](function (x) { return Object.assign({}, x, { comments: (x.comments || []).concat([{ id: 'c' + Date.now(), author: people.ava, time: 'Just now', body: body }]) }); }); } })),
             t.isNew ? null : h('div', { className: 'k-field' },
               h('span', { className: 'k-field__label' }, 'Activity'),
               h(K.Timeline, { 'aria-label': 'Activity', items: [
@@ -406,7 +446,7 @@
 
     function ProjectWizard(p) {
       var stepIndex = React.useState(0), current = stepIndex[0];
-      var d = React.useState({ name: '', description: '', deadline: isoFromToday(30), lead: 'ava', members: ['ava'] });
+      var d = React.useState({ name: '', description: '', client: null, deadline: isoFromToday(30), lead: 'ava', members: ['ava'] });
       var nameError = React.useState('');
       var steps = [{ label: 'Details', description: 'Name and goal' }, { label: 'Team', description: 'Who works on it' }, { label: 'Review', description: 'Check and create' }];
       function set(k) { return function (e) { var v = e && e.target ? e.target.value : e; var n = Object.assign({}, d[0]); n[k] = v; d[1](n); if (k === 'name') nameError[1](''); }; }
@@ -418,12 +458,14 @@
       var body = current === 0 ? [
           h(K.TextField, { key: 'n', label: 'Name', value: d[0].name, onChange: set('name'), placeholder: 'Website relaunch', error: nameError[0] || undefined, autoFocus: true }),
           h(K.Textarea, { key: 'd', label: 'Goal', rows: 3, maxLength: 280, value: d[0].description, onChange: set('description'), placeholder: 'What should be true when the project is done?' }),
+          h(K.Combobox, { key: 'c', label: 'Client', placeholder: 'Search 200 companies', value: d[0].client, onChange: set('client'), loadOptions: searchClients, hint: 'Results come from a pretend server, so they take a moment.' }),
           h(K.DatePicker, { key: 'dl', label: 'Deadline', value: d[0].deadline, onChange: set('deadline') })]
         : current === 1 ? [
           h(K.Dropdown, { key: 'l', label: 'Lead', value: d[0].lead, onChange: set('lead'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) }),
           h(K.MultiSelect, { key: 'm', label: 'Members', hint: 'Everyone here can see and edit the project.', value: d[0].members, onChange: set('members'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) })]
         : [h(K.List, { key: 's', header: 'Summary' },
           h(K.ListRow, { icon: 'folder', title: d[0].name, subtitle: d[0].description || 'No goal yet' }),
+          h(K.ListRow, { icon: 'home', title: 'Client', value: d[0].client ? d[0].client.label : '-' }),
           h(K.ListRow, { icon: 'person', title: 'Lead', value: people[d[0].lead] }),
           h(K.ListRow, { icon: 'inbox', title: 'Members', value: h(K.AvatarGroup, { names: d[0].members.map(function (m) { return people[m]; }), max: 4 }) }),
           h(K.ListRow, { icon: 'calendar', title: 'Deadline', value: shortDate(d[0].deadline, 'en') }))];
@@ -456,6 +498,15 @@
     var money = function (v) { return '$' + Math.round(v).toLocaleString('en-US'); };
     var moneyAxis = function (v) { return '$' + new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v); };
     var reportScale = { '7 days': 1, '30 days': 4.3, '12 months': 52 };
+
+    var yearOfActivity = (function () {
+      var out = {};
+      for (var i = 0; i < 371; i++) {
+        var weekday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i).getDay();
+        out[isoFromToday(-i)] = weekday === 0 || weekday === 6 ? (i % 9 === 0 ? 1 : 0) : Math.max(0, Math.round(3 + 2.5 * Math.sin(i * 0.3) + 2 * Math.sin(i * 0.05)));
+      }
+      return out;
+    })();
 
     function Reports(p) {
       var period = React.useState('30 days'), k = period[0], scale = reportScale[k];
@@ -490,7 +541,16 @@
               series: [{ key: 'completed', label: 'Completed' }, { key: 'created', label: 'Created' }],
               data: barLabels.map(function (l, i) { return { label: l, completed: completed[i], created: created[i] }; }) })),
           h(K.Card, { className: 'span-6', eyebrow: 'Team', title: 'Tasks completed per person' },
-            h(K.BarList, { 'aria-label': 'Tasks completed per person', format: function (v) { return Math.round(v * scale / 4.3); }, items: Object.keys(people).map(function (id, i) { return { label: people[id], value: [34, 27, 19, 12][i] }; }) }))));
+            h(K.BarList, { 'aria-label': 'Tasks completed per person', format: function (v) { return Math.round(v * scale / 4.3); }, items: Object.keys(people).map(function (id, i) { return { label: people[id], value: [34, 27, 19, 12][i] }; }) })),
+          h(K.Card, { className: 'span-4', eyebrow: 'Time', title: 'Hours by type' },
+            h(K.DonutChart, { 'aria-label': 'Hours by type', centerLabel: 'Hours', size: 160, format: function (v) { return Math.round(v * scale / 4.3).toLocaleString('en-US'); },
+              data: [{ label: 'Design', value: 128 }, { label: 'Engineering', value: 96 }, { label: 'Meetings', value: 41 }, { label: 'Writing', value: 23 }, { label: 'Admin', value: 12 }] })),
+          h(K.Card, { className: 'span-8', eyebrow: 'Tasks', title: 'Status at the end of each period' },
+            h(K.BarChart, { 'aria-label': 'Tasks by status', stacked: true, height: 220, format: function (v) { return v + ' tasks'; },
+              series: [{ key: 'done', label: 'Done' }, { key: 'progress', label: 'In progress' }, { key: 'soon', label: 'Due soon' }, { key: 'overdue', label: 'Overdue' }],
+              data: barLabels.map(function (l, i) { return { label: l, done: completed[i], progress: 6 + (i * 7) % 5, soon: 3 + (i * 3) % 4, overdue: 1 + (i * 5) % 3 }; }) })),
+          h(K.Card, { className: 'span-12', eyebrow: 'Activity', title: 'Tasks completed in the last year' },
+            h(K.Heatmap, { 'aria-label': 'Tasks completed per day', data: yearOfActivity, format: function (v) { return v + (v === 1 ? ' task' : ' tasks'); } }))));
     }
 
     /* ---------- Calendar ---------- */
@@ -536,6 +596,92 @@
             }) : h(K.ListRow, { title: 'Nothing planned', subtitle: 'Right-click the day to add something.' }))));
     }
 
+    /* ---------- Inbox: every change in the workspace, 500 rows, rendered as you scroll ---------- */
+    var activityVerbs = ['commented on', 'completed', 'moved', 'assigned', 'attached a file to', 'changed the due date of', 'created', 'renamed'];
+    var activityItems = ['Redesign the landing page', 'Update pricing page', 'Fix sign-in redirect', 'Write onboarding emails', 'Audit color contrast', 'Prepare the demo', 'Send the invoice', 'Review the pull request'];
+    var activity = (function () {
+      var keys = Object.keys(people), out = [];
+      for (var i = 0; i < 500; i++) {
+        var minutes = 17 * 60 - (i * 37) % 600;
+        out.push({ id: 'A' + (1000 + i), date: isoFromToday(-Math.floor(i / 7)), time: String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0'), who: keys[(i * 3) % keys.length], verb: activityVerbs[(i * 5) % activityVerbs.length], item: activityItems[(i * 7) % activityItems.length] });
+      }
+      return out;
+    })();
+
+    function InboxPage(p) {
+      var range = React.useState({ start: isoFromToday(-29), end: isoFromToday(0) });
+      var rows = activity.filter(function (a) { return a.date >= range[0].start && a.date <= range[0].end; });
+      return h('div', { className: 'inner' },
+        h('div', { className: 'head' },
+          h('div', null, h('h1', { className: 'k-h1' }, 'Inbox'), h('p', null, rows.length.toLocaleString('en-US') + ' changes in the period. Only the rows you see are rendered.')),
+          h(K.DateRangePicker, { 'aria-label': 'Period', className: 'range-filter', value: range[0], onChange: range[1] })),
+        rows.length ? h(K.Table, { 'aria-label': 'Activity', rows: rows, maxHeight: 560, defaultSort: { key: 'when', dir: 'desc' }, columns: [
+          { key: 'when', label: 'When', sortable: true, width: 160, sortValue: function (r) { return r.date + ' ' + r.time; }, render: function (r) { return shortDate(r.date, p.lang) + ' · ' + r.time; } },
+          { key: 'who', label: 'Who', sortable: true, sortValue: function (r) { return people[r.who]; }, render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.who], size: 'sm' }), people[r.who]); } },
+          { key: 'verb', label: 'Change', sortable: true },
+          { key: 'item', label: 'Task', strong: true, sortable: true },
+          { key: 'id', label: 'ID', mono: true, align: 'right' }] })
+        : h(K.EmptyState, { icon: 'inbox', title: 'Nothing in this period', description: 'Choose a longer period to see more.' }));
+    }
+
+    /* ---------- Timeline: the plan as a Gantt ---------- */
+    function TimelinePage(p) {
+      var progress = { 'Done': 1, 'In progress': 0.5, 'Due soon': 0.3, 'Overdue': 0.7 };
+      var items = p.tasks.map(function (t) {
+        var end = t.due, d = dateOf(end); d.setDate(d.getDate() - 6);
+        return { id: t.id, group: 'Website', label: t.name, start: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), end: end, progress: progress[t.status], avatar: people[t.owner], task: t };
+      }).concat([
+        { id: 'w-launch', group: 'Website', label: 'Launch', start: isoFromToday(12), milestone: true },
+        { id: 'm1', group: 'Mobile app', label: 'Prototype', start: isoFromToday(-10), end: isoFromToday(4), progress: 0.8 },
+        { id: 'm2', group: 'Mobile app', label: 'User tests', start: isoFromToday(5), end: isoFromToday(14), progress: 0 },
+        { id: 'm3', group: 'Mobile app', label: 'Beta', start: isoFromToday(21), milestone: true }]);
+      return h('div', { className: 'inner' },
+        h('div', { className: 'head' },
+          h('div', null, h('h1', { className: 'k-h1' }, 'Timeline'), h('p', null, 'Every task from a week before its deadline. Click a bar to open the task.'))),
+        h(K.Gantt, { 'aria-label': 'Plan', items: items, maxHeight: 560, onItemClick: function (it) { if (it.task) p.onOpenTask(it.task); else K.toast(it.label + (it.milestone ? ' · milestone' : '')); } }));
+    }
+
+    /* ---------- A meeting, created from the calendar ---------- */
+    function MeetingModal(p) {
+      var d = React.useState({ title: '', date: p.date, time: p.time, end: p.end, attendees: ['Ava Thompson'] });
+      var error = React.useState('');
+      function set(k) { return function (e) { var v = e && e.target ? e.target.value : e; d[1](function (x) { var n = Object.assign({}, x); n[k] = v; return n; }); if (k === 'title') error[1](''); }; }
+      function save() {
+        if (!d[0].title.trim()) { error[1]('Give the meeting a title'); return; }
+        p.onSave(d[0]);
+      }
+      return h(K.Modal, { size: 'md', open: p.open, onClose: p.onClose, title: 'New meeting', description: 'It shows up in the calendar for everyone invited.',
+        footer: h(React.Fragment, null, h(K.Button, { variant: 'secondary', onClick: p.onClose }, 'Cancel'), h(K.Button, { icon: 'check', onClick: save }, 'Add meeting')) },
+        h(K.TextField, { label: 'Title', value: d[0].title, onChange: set('title'), placeholder: 'Design review', error: error[0] || undefined, autoFocus: true }),
+        h('div', { className: 'set-pair' },
+          h(K.DatePicker, { label: 'Date', value: d[0].date, onChange: set('date') }),
+          h('div', { className: 'set-pair' },
+            h(K.TimePicker, { label: 'Starts', value: d[0].time, onChange: set('time') }),
+            h(K.TimePicker, { label: 'Ends', value: d[0].end, onChange: set('end') }))),
+        h(K.MultiSelect, { label: 'Invite', value: d[0].attendees, onChange: set('attendees'), options: Object.keys(people).map(function (k) { return people[k]; }) }));
+    }
+
+    /* ---------- Security dialogs ---------- */
+    function PasswordModal(p) {
+      var next = React.useState('');
+      var strong = next[0].length >= 8;
+      return h(K.Modal, { size: 'md', open: p.open, onClose: p.onClose, title: 'Change password', description: 'You stay signed in on this device.',
+        footer: h(React.Fragment, null, h(K.Button, { variant: 'secondary', onClick: p.onClose }, 'Cancel'),
+          h(K.Button, { icon: 'check', disabled: !strong, onClick: function () { p.onClose(); K.toast.success('Password changed'); } }, 'Change password')) },
+        h(K.PasswordField, { label: 'Current password', defaultValue: 'hunter2hunter2' }),
+        h(K.PasswordField, { label: 'New password', strength: true, value: next[0], onChange: function (e) { next[1](e.target.value); }, hint: 'At least 8 characters. Longer is better.' }));
+    }
+
+    function TwoFactorModal(p) {
+      var code = React.useState(''), error = React.useState('');
+      return h(K.Modal, { size: 'md', open: p.open, onClose: p.onClose, title: 'Turn on two-factor authentication', description: 'Scan the code in your authenticator app, then type the six digits it shows.',
+        footer: h(K.Button, { variant: 'secondary', onClick: p.onClose }, 'Cancel') },
+        h('div', { className: 'qr', 'aria-hidden': true }),
+        h(K.CodeInput, { label: 'Code from the app', autoFocus: true, value: code[0], error: error[0] || undefined, hint: 'In the demo every code works except 000000.',
+          onChange: function (v) { code[1](v); error[1](''); },
+          onComplete: function (v) { if (v === '000000') { error[1]('That code is not right. Try the newest one in the app.'); return; } p.onDone(); } }));
+    }
+
     function PageHead(p) {
       var info = settingsPages[p.page];
       return h('div', { className: 'page-head' },
@@ -549,7 +695,7 @@
       return {
         value: draft[0],
         dirty: Object.keys(draft[0]).some(function (k) { return draft[0][k] !== saved[k]; }),
-        set: function (k) { return function (e) { var n = Object.assign({}, draft[0]); n[k] = e.target.value; draft[1](n); }; },
+        set: function (k) { return function (e) { var n = Object.assign({}, draft[0]); n[k] = e && e.target ? e.target.value : e; draft[1](n); }; },
         reset: function () { draft[1](saved); }
       };
     }
@@ -580,13 +726,16 @@
     }
 
     function SecurityPage(p) {
+      var pw = React.useState(false), twoFactor = React.useState(false);
       return h(React.Fragment, null,
+        h(PasswordModal, { open: pw[0], onClose: function () { pw[1](false); } }),
+        h(TwoFactorModal, { open: twoFactor[0], onClose: function () { twoFactor[1](false); }, onDone: function () { twoFactor[1](false); p.onPref('twoFactor', true); K.toast.success('Two-factor authentication is on'); } }),
         h(PageHead, { page: 'security' }),
         h('div', null,
           h(K.SettingsSection, { title: 'Two-factor authentication', description: 'A code from your authenticator app every time you sign in.' },
-            h(K.Switch, { label: 'Ask for a code when I sign in', checked: p.prefs.twoFactor, onChange: function (on) { p.onPref('twoFactor', on); } })),
+            h(K.Switch, { label: 'Ask for a code when I sign in', checked: p.prefs.twoFactor, onChange: function (on) { if (on) twoFactor[1](true); else { p.onPref('twoFactor', false); K.toast('Two-factor authentication is off'); } } })),
           h(K.SettingsSection, { title: 'Password', description: 'Last changed 3 months ago.' },
-            h(K.Button, { variant: 'secondary', icon: 'lock', onClick: function () { K.toast('Password change is not part of the demo'); } }, 'Change password')),
+            h(K.Button, { variant: 'secondary', icon: 'lock', onClick: function () { pw[1](true); } }, 'Change password')),
           h(K.SettingsSection, { title: 'Active sessions', description: 'Devices that are signed in to your account.' },
             h(K.List, null,
               h(K.ListRow, { icon: 'home', title: 'Chrome on Windows', subtitle: 'Copenhagen · This device', value: h(K.Badge, null, 'Current') }),
@@ -640,7 +789,11 @@
           h(K.SettingsSection, { title: 'Workspace name', description: 'Shown in the sidebar and in emails.' },
             h(K.TextField, { 'aria-label': 'Workspace name', value: d.value.name, onChange: d.set('name') })),
           h(K.SettingsSection, { title: 'Workspace URL', description: 'Where your team finds the workspace.' },
-            h(K.TextField, { 'aria-label': 'Workspace URL', value: d.value.url, onChange: d.set('url'), error: urlError, hint: urlError ? undefined : 'klar.app/' + d.value.url }))));
+            h(K.TextField, { 'aria-label': 'Workspace URL', value: d.value.url, onChange: d.set('url'), error: urlError, hint: urlError ? undefined : 'klar.app/' + d.value.url })),
+          h(K.SettingsSection, { title: 'Monthly budget', description: 'Used for the cost reports. Written the Danish way.' },
+            h(K.CurrencyField, { 'aria-label': 'Monthly budget', className: 'set-narrow', value: d.value.budget, onChange: d.set('budget') })),
+          h(K.SettingsSection, { title: 'Working hours', description: 'A normal week for everyone in the workspace.' },
+            h(K.NumberField, { 'aria-label': 'Hours per week', className: 'set-narrow', unit: 'hours per week', min: 1, max: 60, value: d.value.hours, onChange: d.set('hours') }))));
     }
 
     function memberMenu(m) {
