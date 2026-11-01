@@ -33,13 +33,15 @@
     .person { display: inline-flex; align-items: center; gap: 8px; }
     .hint { font-size: 12px; color: var(--text-muted); }
 
-    /* Settings: label column on the left, controls on the right, hairlines between sections */
-    .set-row { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, 2fr); gap: var(--space-8); padding: var(--space-6) 0; border-top: 1px solid var(--border); }
-    .set-row h2 { margin: 0; }
-    .set-row p { margin: 4px 0 0; max-width: 360px; color: var(--text-secondary); }
-    .set-fields { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); min-width: 0; }
-    .set-fields > .k-field, .set-fields > .k-list, .set-pair { align-self: stretch; }
-    .set-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+    /* Settings: NavList on the left, one page at a time on the right */
+    .settings { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--space-12); align-items: start; }
+    .settings > .k-navlist { position: sticky; top: 0; }
+    .settings__page { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; animation: k-reveal var(--duration-base) var(--ease-out); }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; padding-bottom: var(--space-6); border-bottom: 1px solid var(--border); }
+    .page-head h2 { margin: 0; }
+    .page-head p { margin: 4px 0 0; color: var(--text-secondary); }
+    .set-narrow { width: 320px; max-width: 100%; }
+    .set-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-self: stretch; }
     .set-profile { display: flex; align-items: center; gap: var(--space-4); }
     .set-profile strong { display: block; font-size: 15px; }
     .set-profile span { color: var(--text-secondary); }
@@ -53,11 +55,13 @@
     @media (max-width: 860px) {
       .app .k-sidebar { display: none; }
       .content { padding: var(--space-6); }
-      .set-row { grid-template-columns: 1fr; gap: var(--space-4); }
+      .settings { grid-template-columns: 1fr; gap: var(--space-6); }
+      .settings > .k-navlist { position: static; }
       .set-pair { grid-template-columns: 1fr; }
       .task { grid-template-columns: 1fr; }
       .task__side { padding-left: 0; border-left: 0; }
     }
+    @media (prefers-reduced-motion: reduce) { .settings__page { animation: none; } }
   </style>
 </head>
 <body>
@@ -79,12 +83,49 @@
     ];
     var tone = { 'In progress': 'neutral', 'Done': 'success', 'Overdue': 'danger', 'Due soon': 'warning' };
     var statuses = ['In progress', 'Due soon', 'Done', 'Overdue'];
-    var notifications = [
-      { id: 'assigned', title: 'Assigned to me', subtitle: 'When someone gives you a task.', on: true },
-      { id: 'mentions', title: 'Mentions', subtitle: 'When someone mentions you in a comment.', on: true },
-      { id: 'summary', title: 'Weekly summary', subtitle: 'Every Monday morning.', on: false },
-      { id: 'product', title: 'Product updates', subtitle: 'New features, a few times a year.', on: false }
+    var emailNotifications = [
+      { id: 'assigned', title: 'Assigned to me', subtitle: 'When someone gives you a task.' },
+      { id: 'mentions', title: 'Mentions', subtitle: 'When someone mentions you in a comment.' },
+      { id: 'summary', title: 'Weekly summary', subtitle: 'Every Monday morning.' },
+      { id: 'product', title: 'Product updates', subtitle: 'New features, a few times a year.' }
     ];
+    var members = [
+      { id: 'ava', email: 'ava@example.com', role: 'Owner', status: 'Active' },
+      { id: 'noah', email: 'noah@example.com', role: 'Admin', status: 'Active' },
+      { id: 'mia', email: 'mia@example.com', role: 'Member', status: 'Active' },
+      { id: 'leo', email: 'leo@example.com', role: 'Member', status: 'Invited' }
+    ];
+
+    // Settings: categories as NavList sections, one page per topic.
+    var settingsNav = [
+      { section: 'Account' },
+      { id: 'profile', label: 'Profile', icon: 'person' },
+      { id: 'security', label: 'Security', icon: 'lock' },
+      { section: 'Preferences' },
+      { id: 'appearance', label: 'Appearance', icon: 'settings' },
+      { id: 'language', label: 'Language and region', icon: 'calendar' },
+      { id: 'notifications', label: 'Notifications', icon: 'bell' },
+      { section: 'Workspace' },
+      { id: 'general', label: 'General', icon: 'home' },
+      { id: 'members', label: 'Members', icon: 'inbox', count: members.length },
+      { id: 'delete', label: 'Delete workspace', icon: 'trash' }
+    ];
+    var settingsPages = {
+      profile: { title: 'Profile', description: 'How others see you in the workspace.' },
+      security: { title: 'Security', description: 'Keep your account safe.' },
+      appearance: { title: 'Appearance', description: 'How Klar looks and starts on this device.' },
+      language: { title: 'Language and region', description: 'Texts, dates and the first day of the week.' },
+      notifications: { title: 'Notifications', description: 'Choose what you hear about. Changes apply right away.' },
+      general: { title: 'General', description: 'The name and address of the workspace.' },
+      members: { title: 'Members', description: 'Everyone who can see and edit this workspace.' },
+      'delete': { title: 'Delete workspace', description: 'Permanent actions for the whole workspace.' }
+    };
+
+    function readRoute() {
+      var parts = location.hash.slice(1).split('/');
+      if (parts[0] !== 'settings') return { view: 'home', page: 'profile' };
+      return { view: 'settings', page: settingsPages[parts[1]] ? parts[1] : 'profile' };
+    }
 
     // Shared with the Klar site, so both open in the theme last picked here.
     var darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -94,11 +135,15 @@
     function App() {
       var tasks = React.useState(initialTasks);
       var tab = React.useState('all');
-      var view = React.useState(location.hash === '#settings' ? 'settings' : 'home');
+      var route = React.useState(readRoute);
+      var view = route[0].view, settingsPage = route[0].page;
       var theme = React.useState(savedTheme());
       var systemDark = React.useState(darkQuery.matches);
       var lang = React.useState('en');
+      // Settings live here, so they survive moving between pages.
       var profile = React.useState({ name: people.ava, title: 'Product designer', email: 'ava@example.com' });
+      var workspace = React.useState({ name: 'Acme', url: 'acme' });
+      var prefs = React.useState({ assigned: true, mentions: true, summary: false, product: false, desktop: true, sound: false, twoFactor: true, startPage: 'home', dateFormat: 'Nov 1, 2026', weekStart: 'Monday' });
       var palette = React.useState(false);
       var editing = React.useState(null);
       var editorKey = React.useState(0);
@@ -119,7 +164,14 @@
 
       function chooseTheme(next) { theme[1](next); saveTheme(next); K.setTheme(next); }
       function chooseLang(next) { K.setStrings(next); lang[1](next); }
-      function go(id) { view[1](id); history.replaceState(null, '', id === 'settings' ? '#settings' : location.pathname + location.search); }
+      function navigate(nextView, page) {
+        var next = { view: nextView, page: page || settingsPage };
+        route[1](next);
+        history.replaceState(null, '', next.view === 'settings' ? '#settings/' + next.page : location.pathname + location.search);
+      }
+      function go(id) { navigate(id); }
+      function openSettings(page) { navigate('settings', page); }
+      function setPref(key, value) { prefs[1](function (p) { var n = Object.assign({}, p); n[key] = value; return n; }); }
       function openEditor(task) { editorKey[1](function (k) { return k + 1; }); editing[1](task); }
       function newTask() { openEditor({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); }
 
@@ -166,8 +218,8 @@
             h('div', { className: 'actions' },
               h(K.Button, { size: 'sm', variant: 'secondary', icon: 'filter' }, 'Filter'),
               h(K.Button, { size: 'sm', variant: 'secondary', icon: 'upload', onClick: function () { K.toast.success({ title: 'Report exported', description: 'Sent to your email.' }); } }, 'Export'))),
-          visible.length ? h(K.Table, { onRowClick: function (r) { openEditor(r); }, columns: [
-            { key: 'name', label: 'Task', strong: true, render: function (r) { return h(K.ContextMenu, { items: rowMenu(r) }, r.name); } },
+          visible.length ? h(K.Table, { onRowClick: function (r) { openEditor(r); }, rowMenu: rowMenu, columns: [
+            { key: 'name', label: 'Task', strong: true },
             { key: 'owner', label: 'Owner', render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.owner], size: 'sm' }), people[r.owner]); } },
             { key: 'status', label: 'Status', render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } },
             { key: 'due', label: 'Due' },
@@ -177,12 +229,12 @@
                 h(K.Menu, { align: 'end', items: rowMenu(r), trigger: h(K.Button, { size: 'sm', variant: 'ghost', icon: 'more', 'aria-label': 'Actions for ' + r.name }) }));
             } }], rows: visible })
           : h(K.EmptyState, { icon: 'circle-check', title: 'Nothing here', description: 'No tasks match this view.' }),
-          h('p', { className: 'hint' }, 'Tip: click a task to open it, right-click its name, open the ⋯ menu, or press ⌘K.')));
+          h('p', { className: 'hint' }, 'Tip: click a task to open it, right-click anywhere on it, open the ⋯ menu, or press ⌘K.')));
 
-      var onSettings = view[0] === 'settings';
+      var onSettings = view === 'settings';
 
       return h('div', { className: 'app' },
-        h(K.Sidebar, { value: view[0], onChange: go,
+        h(K.Sidebar, { value: view, onChange: function (id) { if (id === 'settings') openSettings(); else go(id); },
           header: h('div', { className: 'logo' }, h('b', null, 'K'), h('span', null, 'Klar')),
           items: [
             { id: 'home', label: 'Overview', icon: 'home' },
@@ -196,20 +248,21 @@
             { id: 'p3', label: 'Archive', icon: 'folder' }],
           footer: h('div', { className: 'me' }, h(K.Avatar, { name: profile[0].name || '?', status: 'online' }), h('div', null, profile[0].name, h('small', null, 'Pro plan'))) }),
         h('div', { className: 'main' },
-          h(K.Topbar, { breadcrumb: ['Workspace'], title: onSettings ? 'Settings' : 'Overview', actions: h(React.Fragment, null,
+          h(K.Topbar, { breadcrumb: onSettings ? ['Workspace', 'Settings'] : ['Workspace'], title: onSettings ? settingsPages[settingsPage].title : 'Overview', actions: h(React.Fragment, null,
             h(K.Tooltip, { content: 'Search', shortcut: '⌘K', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'search', 'aria-label': 'Search', onClick: function () { palette[1](true); } })),
-            onSettings ? null : h(K.Tooltip, { content: 'Settings', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'settings', 'aria-label': 'Settings', onClick: function () { go('settings'); } })),
+            onSettings ? null : h(K.Tooltip, { content: 'Settings', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'settings', 'aria-label': 'Settings', onClick: function () { openSettings(); } })),
             h(K.Switch, { 'aria-label': 'Dark mode', checked: dark, onChange: function (on) { chooseTheme(on ? 'dark' : 'light'); } }),
             onSettings ? null : h(K.Button, { size: 'sm', icon: 'plus', shortcut: 'C', onClick: newTask }, 'New task')) }),
           h('div', { className: 'content' },
-            onSettings ? h(Settings, { profile: profile[0], onSaveProfile: profile[1], theme: theme[0], onTheme: chooseTheme, lang: lang[0], onLang: chooseLang }) : overview)),
+            onSettings ? h(Settings, { page: settingsPage, onPage: openSettings, profile: profile[0], onSaveProfile: profile[1], workspace: workspace[0], onSaveWorkspace: workspace[1], prefs: prefs[0], onPref: setPref, theme: theme[0], onTheme: chooseTheme, lang: lang[0], onLang: chooseLang }) : overview)),
         h(K.CommandPalette, { overlay: true, open: palette[0], autoFocus: true, onClose: function () { palette[1](false); }, items: [
           { group: 'Suggestions', label: 'New task', icon: 'plus', shortcut: 'C', onSelect: function () { palette[1](false); go('home'); newTask(); } },
           { group: 'Suggestions', label: dark ? 'Switch to light mode' : 'Switch to dark mode', icon: 'settings', onSelect: function () { palette[1](false); chooseTheme(dark ? 'light' : 'dark'); } },
           { group: 'Go to', label: 'Overview', icon: 'home', shortcut: 'G O', onSelect: function () { palette[1](false); go('home'); } },
           { group: 'Go to', label: 'Inbox', icon: 'inbox', shortcut: 'G I', onSelect: function () { palette[1](false); go('inbox'); } },
           { group: 'Go to', label: 'Calendar', icon: 'calendar', shortcut: 'G C', onSelect: function () { palette[1](false); go('cal'); } },
-          { group: 'Go to', label: 'Settings', icon: 'settings', shortcut: 'G S', onSelect: function () { palette[1](false); go('settings'); } },
+          { group: 'Go to', label: 'Settings', icon: 'settings', shortcut: 'G S', onSelect: function () { palette[1](false); openSettings('profile'); } },
+          { group: 'Go to', label: 'Notification settings', icon: 'bell', onSelect: function () { palette[1](false); openSettings('notifications'); } },
           { group: 'Account', label: 'Sign out', icon: 'logout', onSelect: function () { palette[1](false); K.toast('Signed out'); } }] }),
         lastEditing.current ? h(TaskEditor, { key: editorKey[0], open: !!editing[0], task: lastEditing.current, onClose: function () { editing[1](null); }, onSave: function (t) {
           if (t.isNew) { delete t.isNew; tasks[1]([t].concat(tasks[0])); K.toast.success({ title: 'Task created', description: '"' + t.name + '" was added.' }); }
@@ -242,62 +295,161 @@
               h(K.ListRow, { icon: 'person', title: 'Assigned to ' + people[p.task.owner], subtitle: 'Oct 24' }),
               h(K.ListRow, { icon: 'plus', title: 'Task created', subtitle: 'Oct 21' }))),
           h('aside', { className: 'task__side' },
-            h(K.Select, { label: 'Owner', value: draft[0].owner, onChange: set('owner'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) }),
+            h(K.Dropdown, { label: 'Owner', value: draft[0].owner, onChange: set('owner'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) }),
             h(K.TextField, { label: 'Due', value: draft[0].due, onChange: set('due') }),
             h('div', { className: 'k-field' },
               h('span', { className: 'k-field__label' }, 'Status'),
               h(K.RadioGroup, { 'aria-label': 'Status', value: draft[0].status, onChange: set('status'), options: statuses })))));
     }
 
-    function SettingsRow(p) {
-      return h('section', { className: 'set-row' },
-        h('div', null, h('h2', { className: 'k-h3' }, p.title), h('p', null, p.description)),
-        h('div', { className: 'set-fields' }, p.children));
+    function PageHead(p) {
+      var info = settingsPages[p.page];
+      return h('div', { className: 'page-head' },
+        h('div', null, h('h2', { className: 'k-h2' }, info.title), h('p', null, info.description)),
+        p.actions ? h('div', { className: 'actions' }, p.actions) : null);
     }
 
-    function Settings(p) {
-      var draft = React.useState(p.profile);
-      var deleting = React.useState(false);
-      var dirty = Object.keys(draft[0]).some(function (k) { return draft[0][k] !== p.profile[k]; });
-      var emailError = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft[0].email) ? undefined : 'Enter a valid email address';
-      function set(k) { return function (e) { var n = Object.assign({}, draft[0]); n[k] = e.target.value; draft[1](n); }; }
+    // A local copy of saved values, so a page can be edited and then saved or discarded.
+    function useDraft(saved) {
+      var draft = React.useState(saved);
+      return {
+        value: draft[0],
+        dirty: Object.keys(draft[0]).some(function (k) { return draft[0][k] !== saved[k]; }),
+        set: function (k) { return function (e) { var n = Object.assign({}, draft[0]); n[k] = e.target.value; draft[1](n); }; },
+        reset: function () { draft[1](saved); }
+      };
+    }
 
-      return h('div', { className: 'inner' },
-        h('div', { className: 'head' },
-          h('div', null, h('h1', { className: 'k-h1' }, 'Settings'), h('p', null, 'Your profile, how Klar looks and what you hear about.')),
-          h('div', { className: 'actions' },
-            dirty ? h(K.Button, { variant: 'ghost', onClick: function () { draft[1](p.profile); } }, 'Discard') : null,
-            h(K.Button, { icon: 'check', disabled: !dirty || !!emailError, onClick: function () { p.onSaveProfile(draft[0]); K.toast.success('Settings saved'); } }, 'Save changes'))),
+    function SaveActions(p) {
+      return h(React.Fragment, null,
+        p.dirty ? h(K.Button, { variant: 'ghost', onClick: p.onDiscard }, 'Discard') : null,
+        h(K.Button, { icon: 'check', disabled: !p.dirty || p.invalid, onClick: p.onSave }, 'Save changes'));
+    }
+
+    function ProfilePage(p) {
+      var d = useDraft(p.profile);
+      var emailError = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.value.email) ? undefined : 'Enter a valid email address';
+      return h(React.Fragment, null,
+        h(PageHead, { page: 'profile', actions: h(SaveActions, { dirty: d.dirty, invalid: !!emailError, onDiscard: d.reset, onSave: function () { p.onSaveProfile(d.value); K.toast.success('Profile saved'); } }) }),
         h('div', null,
-          h(SettingsRow, { title: 'Profile', description: 'How others see you in the workspace.' },
+          h(K.SettingsSection, { title: 'Photo', description: 'Shown next to your name across the workspace.' },
             h('div', { className: 'set-profile' },
-              h(K.Avatar, { name: draft[0].name || '?', size: 'lg' }),
-              h('div', null, h('strong', null, draft[0].name || 'No name'), h('span', null, draft[0].title || 'No title')),
-              h(K.Button, { size: 'sm', variant: 'secondary', icon: 'upload', onClick: function () { K.toast('Photo upload is not part of the demo'); } }, 'Change photo')),
+              h(K.Avatar, { name: d.value.name || '?', size: 'lg' }),
+              h('div', null, h('strong', null, d.value.name || 'No name'), h('span', null, d.value.title || 'No title')),
+              h(K.Button, { size: 'sm', variant: 'secondary', icon: 'upload', onClick: function () { K.toast('Photo upload is not part of the demo'); } }, 'Change photo'))),
+          h(K.SettingsSection, { title: 'Name and title', description: 'Use the name your team knows you by.' },
             h('div', { className: 'set-pair' },
-              h(K.TextField, { label: 'Name', value: draft[0].name, onChange: set('name') }),
-              h(K.TextField, { label: 'Job title', value: draft[0].title, onChange: set('title') })),
-            h(K.TextField, { label: 'Email address', type: 'email', value: draft[0].email, onChange: set('email'), error: emailError, hint: emailError ? undefined : 'Used for sign-in and notifications.' })),
-          h(SettingsRow, { title: 'Appearance', description: 'How Klar looks on this device. System follows your operating system.' },
+              h(K.TextField, { label: 'Name', value: d.value.name, onChange: d.set('name') }),
+              h(K.TextField, { label: 'Job title', value: d.value.title, onChange: d.set('title') }))),
+          h(K.SettingsSection, { title: 'Email address', description: 'Used for sign-in and notifications.' },
+            h(K.TextField, { 'aria-label': 'Email address', type: 'email', value: d.value.email, onChange: d.set('email'), error: emailError }))));
+    }
+
+    function SecurityPage(p) {
+      return h(React.Fragment, null,
+        h(PageHead, { page: 'security' }),
+        h('div', null,
+          h(K.SettingsSection, { title: 'Two-factor authentication', description: 'A code from your authenticator app every time you sign in.' },
+            h(K.Switch, { label: 'Ask for a code when I sign in', checked: p.prefs.twoFactor, onChange: function (on) { p.onPref('twoFactor', on); } })),
+          h(K.SettingsSection, { title: 'Password', description: 'Last changed 3 months ago.' },
+            h(K.Button, { variant: 'secondary', icon: 'lock', onClick: function () { K.toast('Password change is not part of the demo'); } }, 'Change password')),
+          h(K.SettingsSection, { title: 'Active sessions', description: 'Devices that are signed in to your account.' },
+            h(K.List, null,
+              h(K.ListRow, { icon: 'home', title: 'Chrome on Windows', subtitle: 'Copenhagen · This device', value: h(K.Badge, null, 'Current') }),
+              h(K.ListRow, { icon: 'person', title: 'Safari on iPhone', subtitle: 'Aarhus · 2 hours ago', accessory: h(K.Button, { size: 'sm', variant: 'secondary', onClick: function () { K.toast.success('Signed out of Safari on iPhone'); } }, 'Sign out') })))));
+    }
+
+    function AppearancePage(p) {
+      return h(React.Fragment, null,
+        h(PageHead, { page: 'appearance' }),
+        h('div', null,
+          h(K.SettingsSection, { title: 'Theme', description: 'System follows your operating system.' },
             h(K.SegmentedControl, { 'aria-label': 'Theme', value: p.theme, onChange: p.onTheme, options: [
               { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }] })),
-          h(SettingsRow, { title: 'Language', description: 'Used for built-in texts like search, close and pagination.' },
-            h(K.Select, { 'aria-label': 'Language', value: p.lang, onChange: function (e) { p.onLang(e.target.value); }, options: [
-              { value: 'en', label: 'English' }, { value: 'da', label: 'Dansk' }] })),
-          h(SettingsRow, { title: 'Notifications', description: 'Choose what you hear about. Changes apply right away.' },
-            h(K.List, null, notifications.map(function (n) {
-              return h(K.ListRow, { key: n.id, title: n.title, subtitle: n.subtitle, accessory: h(K.Switch, { 'aria-label': n.title, defaultChecked: n.on }) });
+          h(K.SettingsSection, { title: 'Start page', description: 'The page Klar opens on.' },
+            h(K.Dropdown, { 'aria-label': 'Start page', value: p.prefs.startPage, onChange: function (v) { p.onPref('startPage', v); }, className: 'set-narrow', options: [
+              { value: 'home', label: 'Overview', icon: 'home' }, { value: 'inbox', label: 'Inbox', icon: 'inbox' }, { value: 'cal', label: 'Calendar', icon: 'calendar' }] }))));
+    }
+
+    function LanguagePage(p) {
+      return h(React.Fragment, null,
+        h(PageHead, { page: 'language' }),
+        h('div', null,
+          h(K.SettingsSection, { title: 'Language', description: 'Used for built-in texts like search, close and pagination.' },
+            h(K.Dropdown, { 'aria-label': 'Language', value: p.lang, onChange: p.onLang, className: 'set-narrow', options: [
+              { value: 'en', label: 'English', description: 'Search, Close, Previous' }, { value: 'da', label: 'Dansk', description: 'Søg, Luk, Forrige' }] })),
+          h(K.SettingsSection, { title: 'Date format', description: 'How dates are written across the workspace.' },
+            h(K.RadioGroup, { 'aria-label': 'Date format', value: p.prefs.dateFormat, onChange: function (v) { p.onPref('dateFormat', v); }, options: ['Nov 1, 2026', '01/11/2026', '2026-11-01'] })),
+          h(K.SettingsSection, { title: 'First day of the week', description: 'Used by the calendar and date pickers.' },
+            h(K.SegmentedControl, { 'aria-label': 'First day of the week', value: p.prefs.weekStart, onChange: function (v) { p.onPref('weekStart', v); }, options: ['Monday', 'Sunday'] }))));
+    }
+
+    function NotificationsPage(p) {
+      return h(React.Fragment, null,
+        h(PageHead, { page: 'notifications' }),
+        h('div', null,
+          h(K.SettingsSection, { title: 'Email', description: 'What lands in your inbox.' },
+            h(K.List, null, emailNotifications.map(function (n) {
+              return h(K.ListRow, { key: n.id, title: n.title, subtitle: n.subtitle, accessory: h(K.Switch, { 'aria-label': n.title, checked: p.prefs[n.id], onChange: function (on) { p.onPref(n.id, on); } }) });
             }))),
-          h(SettingsRow, { title: 'Security', description: 'Keep your account safe.' },
-            h(K.List, null,
-              h(K.ListRow, { icon: 'lock', title: 'Two-factor authentication', subtitle: 'Authenticator app', value: h(K.Badge, { tone: 'success' }, 'On') }),
-              h(K.ListRow, { icon: 'person', title: 'Password', subtitle: 'Changed 3 months ago', accessory: h(K.Button, { size: 'sm', variant: 'secondary', onClick: function () { K.toast('Password change is not part of the demo'); } }, 'Change') }),
-              h(K.ListRow, { icon: 'settings', title: 'Active sessions', subtitle: 'This browser and 1 other', accessory: 'chevron', onClick: function () { K.toast('2 active sessions'); } }))),
-          h(SettingsRow, { title: 'Delete workspace', description: 'Removes the workspace, its projects and every task for everyone. This cannot be undone.' },
-            h(K.Button, { variant: 'danger', icon: 'trash', onClick: function () { deleting[1](true); } }, 'Delete workspace'))),
-        h(K.Dialog, { overlay: true, open: deleting[0], onClose: function () { deleting[1](false); }, title: 'Delete workspace?', message: '"Workspace" and its 3 projects will be permanently deleted for everyone.', actions: [
-          { label: 'Cancel', variant: 'secondary', onClick: function () { deleting[1](false); } },
-          { label: 'Delete workspace', variant: 'danger', onClick: function () { deleting[1](false); K.toast({ title: 'Workspace deleted', description: 'This is a demo, so nothing was removed.' }); } }] }));
+          h(K.SettingsSection, { title: 'Desktop', description: 'While Klar is open in a browser tab.' },
+            h(K.Switch, { label: 'Show desktop notifications', checked: p.prefs.desktop, onChange: function (on) { p.onPref('desktop', on); } }),
+            h(K.Switch, { label: 'Play a sound', checked: p.prefs.sound, disabled: !p.prefs.desktop, onChange: function (on) { p.onPref('sound', on); } }))));
+    }
+
+    function GeneralPage(p) {
+      var d = useDraft(p.workspace);
+      var urlError = /^[a-z0-9-]+$/.test(d.value.url) ? undefined : 'Use only lowercase letters, numbers and dashes';
+      return h(React.Fragment, null,
+        h(PageHead, { page: 'general', actions: h(SaveActions, { dirty: d.dirty, invalid: !d.value.name.trim() || !!urlError, onDiscard: d.reset, onSave: function () { p.onSaveWorkspace(d.value); K.toast.success('Workspace saved'); } }) }),
+        h('div', null,
+          h(K.SettingsSection, { title: 'Workspace name', description: 'Shown in the sidebar and in emails.' },
+            h(K.TextField, { 'aria-label': 'Workspace name', value: d.value.name, onChange: d.set('name') })),
+          h(K.SettingsSection, { title: 'Workspace URL', description: 'Where your team finds the workspace.' },
+            h(K.TextField, { 'aria-label': 'Workspace URL', value: d.value.url, onChange: d.set('url'), error: urlError, hint: urlError ? undefined : 'klar.app/' + d.value.url }))));
+    }
+
+    function memberMenu(m) {
+      return [
+        { label: 'Role', icon: 'person', items: ['Owner', 'Admin', 'Member'].map(function (r) { return { label: r, checked: m.role === r, onSelect: function () { K.toast.success(people[m.id] + ' is now ' + r); } }; }) },
+        { separator: true },
+        { label: 'Remove from workspace', icon: 'trash', danger: true, disabled: m.role === 'Owner', onSelect: function () { K.toast(people[m.id] + ' was removed'); } }];
+    }
+
+    function MembersPage() {
+      return h(React.Fragment, null,
+        h(PageHead, { page: 'members', actions: h(K.Button, { icon: 'plus', onClick: function () { K.toast.success('Invite link copied'); } }, 'Invite people') }),
+        h(K.Table, { rows: members, rowMenu: memberMenu, columns: [
+          { key: 'name', label: 'Name', strong: true, render: function (m) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[m.id], size: 'sm' }), people[m.id]); } },
+          { key: 'email', label: 'Email' },
+          { key: 'role', label: 'Role' },
+          { key: 'status', label: 'Status', render: function (m) { return h(K.Badge, { tone: m.status === 'Active' ? 'success' : 'warning' }, m.status); } },
+          { key: 'menu', label: '', width: 48, align: 'right', render: function (m) {
+            return h(K.Menu, { align: 'end', items: memberMenu(m), trigger: h(K.Button, { size: 'sm', variant: 'ghost', icon: 'more', 'aria-label': 'Actions for ' + people[m.id] }) });
+          } }] }));
+    }
+
+    function DeletePage(p) {
+      var open = React.useState(false);
+      return h(React.Fragment, null,
+        h(PageHead, { page: 'delete' }),
+        h('div', null,
+          h(K.SettingsSection, { title: 'Delete this workspace', description: 'Removes ' + p.workspace.name + ', its 3 projects and every task for everyone. This cannot be undone.' },
+            h(K.Button, { variant: 'danger', icon: 'trash', onClick: function () { open[1](true); } }, 'Delete workspace'))),
+        h(K.Dialog, { overlay: true, open: open[0], onClose: function () { open[1](false); }, title: 'Delete ' + p.workspace.name + '?', message: 'The workspace and its 3 projects will be permanently deleted for everyone.', actions: [
+          { label: 'Cancel', variant: 'secondary', onClick: function () { open[1](false); } },
+          { label: 'Delete workspace', variant: 'danger', onClick: function () { open[1](false); K.toast({ title: 'Workspace deleted', description: 'This is a demo, so nothing was removed.' }); } }] }));
+    }
+
+    var settingsPageComponents = { profile: ProfilePage, security: SecurityPage, appearance: AppearancePage, language: LanguagePage, notifications: NotificationsPage, general: GeneralPage, members: MembersPage, 'delete': DeletePage };
+
+    function Settings(p) {
+      return h('div', { className: 'inner' },
+        h('div', { className: 'head' },
+          h('div', null, h('h1', { className: 'k-h1' }, 'Settings'), h('p', null, 'Your account, your preferences and the workspace.'))),
+        h('div', { className: 'settings' },
+          h(K.NavList, { 'aria-label': 'Settings', items: settingsNav, value: p.page, onChange: p.onPage }),
+          h('div', { key: p.page, className: 'settings__page' }, h(settingsPageComponents[p.page], p))));
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(h(App));
