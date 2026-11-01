@@ -1,0 +1,63 @@
+{
+  "name": "klar",
+  "version": "1.0.0",
+  "description": "A sharp, monochrome design system for React - tokens, 40 components and themes for Tailwind v4 and shadcn/ui.",
+  "license": "MIT",
+  "author": "Viggo Weje",
+  "homepage": "https://vweje.github.io/klar/examples/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vweje/klar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vweje/klar/issues"
+  },
+  "keywords": [
+    "design-system",
+    "react",
+    "components",
+    "ui",
+    "tailwind",
+    "tailwindcss",
+    "shadcn",
+    "css-variables",
+    "design-tokens",
+    "dark-mode",
+    "nextjs",
+    "monochrome"
+  ],
+  "type": "module",
+  "main": "./dist/klar.cjs",
+  "module": "./dist/klar.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/klar.mjs",
+      "require": "./dist/klar.cjs"
+    },
+    "./styles.css": "./dist/klar.css",
+    "./tokens.css": "./dist/tokens.css",
+    "./components.css": "./dist/components.css",
+    "./tailwind.css": "./dist/tailwind.css",
+    "./shadcn.css": "./dist/shadcn.css",
+    "./tokens.json": "./dist/tokens.json"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.2"
+  }
+}

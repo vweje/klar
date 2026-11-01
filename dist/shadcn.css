@@ -1,0 +1,36 @@
+/* Klar - shadcn/ui theme. Import after klar/tokens.css (or klar/styles.css).
+   --primary and --border come straight from Klar's tokens (same name and meaning). */
+:root, .light, .dark, [data-theme] {
+  --background: var(--canvas);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--text);
+  --primary-foreground: var(--on-primary);
+  --secondary: var(--fill);
+  --secondary-foreground: var(--text);
+  --muted: var(--fill);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--fill);
+  --accent-foreground: var(--text);
+  --destructive: var(--danger-solid);
+  --destructive-foreground: var(--on-danger);
+  --input: var(--border-strong);
+  --ring: var(--focus-ring);
+  --radius: 8px;
+  --chart-1: var(--text);
+  --chart-2: var(--text-secondary);
+  --chart-3: var(--text-muted);
+  --chart-4: var(--border-strong);
+  --chart-5: var(--fill-hover);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--on-primary);
+  --sidebar-accent: var(--fill);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--focus-ring);
+}
+body { font-family: var(--font-sans); font-weight: 500; }
