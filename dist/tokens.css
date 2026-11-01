@@ -112,6 +112,11 @@
   --z-dialog: 100;
   --z-toast: 200;
   --z-tooltip: 300;
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --font-sans: Manrope, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }

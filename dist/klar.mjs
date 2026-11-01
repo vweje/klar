@@ -61,6 +61,65 @@ function useControlled(value, initial) {
     if (!c) s[1](v);
   }];
 }
+function reducedMotion() {
+  return typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+function motionMs(token) {
+  if (reducedMotion()) return 0;
+  var v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--" + token));
+  return isNaN(v) ? 120 : v;
+}
+function usePresence(open, token) {
+  var st = useState2(open), mounted = st[0];
+  R.useEffect(function() {
+    if (open) {
+      st[1](true);
+      return;
+    }
+    var t = setTimeout(function() {
+      st[1](false);
+    }, motionMs(token));
+    return function() {
+      clearTimeout(t);
+    };
+  }, [open]);
+  return { show: open || mounted, leaving: !open && mounted };
+}
+function useEscape(active, onEscape) {
+  R.useEffect(function() {
+    if (!active) return;
+    function key(e) {
+      if (e.key === "Escape") onEscape();
+    }
+    document.addEventListener("keydown", key);
+    return function() {
+      document.removeEventListener("keydown", key);
+    };
+  });
+}
+function onScrimDown(onClose) {
+  return function(e) {
+    if (e.target === e.currentTarget && onClose) onClose();
+  };
+}
+function setTheme(theme) {
+  var root = document.documentElement;
+  function apply() {
+    if (theme === "system") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", theme);
+  }
+  function done() {
+    root.classList.remove("k-theme-switching");
+  }
+  root.classList.add("k-theme-switching");
+  if (document.startViewTransition && !reducedMotion()) {
+    document.startViewTransition(apply).finished.then(done, done);
+    return;
+  }
+  apply();
+  getComputedStyle(document.body).opacity;
+  setTimeout(done, 1);
+}
 var PATHS = {
   "chevron-right": "M9 6l6 6-6 6",
   "chevron-down": "M6 9l6 6 6-6",
@@ -342,6 +401,9 @@ function Sidebar(p) {
 }
 function Dialog(p) {
   var id = R.useId();
+  var presence = usePresence(p.open !== false, "duration-fast");
+  useEscape(p.overlay && p.open !== false && !!p.onClose, p.onClose);
+  if (!presence.show) return null;
   var acts = p.actions && p.actions.length ? p.actions : [{ label: "OK", variant: "primary" }];
   var panel = h(
     "div",
@@ -361,7 +423,7 @@ function Dialog(p) {
       })
     )
   );
-  return p.overlay ? h("div", { className: "k-scrim" }, panel) : panel;
+  return p.overlay ? h("div", { className: cx("k-scrim", presence.leaving && "k-leaving"), onMouseDown: onScrimDown(p.onClose) }, panel) : panel;
 }
 function Textarea(p) {
   var auto = R.useId(), id = p.id || auto, note = p.error || p.hint;
@@ -776,6 +838,7 @@ function MenuPanel(p) {
 }
 function Menu(p) {
   var st = useState2(!!p.defaultOpen), open = st[0], ref = R.useRef(null);
+  var presence = usePresence(open, "duration-fast");
   R.useEffect(function() {
     if (!open) return;
     function off(e) {
@@ -800,13 +863,21 @@ function Menu(p) {
     R.cloneElement(p.trigger, { onClick: function() {
       st[1](!open);
     }, "aria-haspopup": "menu", "aria-expanded": open }),
-    open ? h(MenuPanel, { items: p.items, defaultOpenSub: p.defaultOpenSub, onClose: function() {
+    presence.show ? h(MenuPanel, { items: p.items, defaultOpenSub: p.defaultOpenSub, onClose: function() {
       st[1](false);
-    }, className: "k-dropdown__panel" }) : null
+    }, className: cx("k-dropdown__panel", presence.leaving && "k-leaving") }) : null
   );
 }
 function CommandPalette(p) {
   var q = useState2(""), act = useState2(0), query = q[0].toLowerCase();
+  var presence = usePresence(p.open !== false, "duration-fast");
+  R.useEffect(function() {
+    if (p.open) {
+      q[1]("");
+      act[1](0);
+    }
+  }, [p.open]);
+  if (!presence.show) return null;
   var list = (p.items || []).filter(function(it) {
     return !query || it.label.toLowerCase().indexOf(query) >= 0;
   });
@@ -890,10 +961,12 @@ function CommandPalette(p) {
       h("span", null, h("kbd", { className: "k-kbd" }, "\u21B5"), " " + strings.select)
     )
   );
-  return p.overlay ? h("div", { className: "k-scrim k-scrim--top" }, panel) : panel;
+  return p.overlay ? h("div", { className: cx("k-scrim k-scrim--top", presence.leaving && "k-leaving"), onMouseDown: onScrimDown(p.onClose) }, panel) : panel;
 }
 function ContextMenu(p) {
-  var st = useState2(p.defaultOpenAt || null), pos = st[0], ref = R.useRef(null);
+  var st = useState2(p.defaultOpenAt || null), pos = st[0], ref = R.useRef(null), last = R.useRef(pos);
+  var presence = usePresence(!!pos, "duration-fast");
+  if (pos) last.current = pos;
   R.useEffect(function() {
     if (!pos) return;
     function off(e) {
@@ -918,9 +991,9 @@ function ContextMenu(p) {
       e.preventDefault();
       st[1]({ x: e.clientX, y: e.clientY });
     } }, p.children),
-    pos ? h(
+    presence.show ? h(
       "div",
-      { ref, className: "k-ctx", style: { left: pos.x, top: pos.y }, onClick: function(e) {
+      { ref, className: cx("k-ctx", presence.leaving && "k-leaving"), style: { left: last.current.x, top: last.current.y }, onClick: function(e) {
         e.stopPropagation();
       }, onContextMenu: function(e) {
         e.preventDefault();
@@ -939,10 +1012,20 @@ function emitToasts() {
   });
 }
 function dismissToast(id) {
-  toastStore.list = toastStore.list.filter(function(t) {
-    return t.id !== id;
+  var found = toastStore.list.some(function(t) {
+    return t.id === id && !t.leaving;
+  });
+  if (!found) return;
+  toastStore.list = toastStore.list.map(function(t) {
+    return t.id === id ? Object.assign({}, t, { leaving: true }) : t;
   });
   emitToasts();
+  setTimeout(function() {
+    toastStore.list = toastStore.list.filter(function(t) {
+      return t.id !== id;
+    });
+    emitToasts();
+  }, motionMs("duration-fast"));
 }
 function toast(opts) {
   if (typeof opts === "string") opts = { title: opts };
@@ -977,7 +1060,7 @@ function Toaster(p) {
     st[0].map(function(t) {
       return h(
         "div",
-        { key: t.id, className: "k-toasts__item" },
+        { key: t.id, className: cx("k-toasts__item", t.leaving && "k-toasts__item--leaving") },
         h(Toast, { title: t.title, description: t.description, tone: t.tone, action: t.action, onClose: function() {
           dismissToast(t.id);
         } })
@@ -987,6 +1070,9 @@ function Toaster(p) {
 }
 function Drawer(p) {
   var id = R.useId();
+  var presence = usePresence(p.open !== false, "duration-base");
+  useEscape(p.overlay && p.open !== false && !!p.onClose, p.onClose);
+  if (!presence.show) return null;
   var panel = h(
     "aside",
     { className: cx("k-drawer", "k-drawer--" + (p.side || "right"), p.className), role: "dialog", "aria-modal": p.overlay ? true : void 0, "aria-labelledby": id },
@@ -999,9 +1085,7 @@ function Drawer(p) {
     h("div", { className: "k-drawer__body" }, p.children),
     p.footer ? h("footer", { className: "k-drawer__foot" }, p.footer) : null
   );
-  return p.overlay ? h("div", { className: "k-scrim k-scrim--drawer k-scrim--" + (p.side || "right"), onMouseDown: function(e) {
-    if (e.target === e.currentTarget && p.onClose) p.onClose();
-  } }, panel) : panel;
+  return p.overlay ? h("div", { className: cx("k-scrim k-scrim--drawer k-scrim--" + (p.side || "right"), presence.leaving && "k-leaving"), onMouseDown: onScrimDown(p.onClose) }, panel) : panel;
 }
 export {
   Accordion,
@@ -1045,5 +1129,6 @@ export {
   Topbar,
   locales,
   setStrings,
+  setTheme,
   toast
 };

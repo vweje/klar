@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Motion tokens: `duration-fast`, `duration-base`, `duration-slow`, `ease-out` and `ease-in`. Every transition in the components now uses them.
+- `setTheme()` switches between light and dark with a single crossfade.
+- Menus, context menus, dialogs, the drawer, the command palette, toasts and accordions animate in and out with opacity and transform only.
+- `Dialog`, `Drawer` and `CommandPalette` take `open` for exit animations; `Dialog` and `Drawer` close on Esc, and every overlay closes on a click on the scrim when `onClose` is set.
+- Tooltips wait a moment on hover before they show, so they no longer flicker as the pointer passes.
+
 ## 1.0.0 - 2026-11-01
 
 First release.

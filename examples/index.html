@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Klar - demo</title>
   <meta name="description" content="Klar is a sharp, monochrome design system for React: tokens, components and themes for Tailwind and shadcn/ui.">
+  <script>
+    // Apply the saved theme before first paint so the demo never flashes the wrong one.
+    try { var saved = localStorage.getItem('klar-theme'); if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved); } catch (e) {}
+  </script>
   <!-- From a CDN: https://cdn.jsdelivr.net/gh/vweje/klar@main/dist/klar.css -->
   <link rel="stylesheet" href="../dist/klar.css">
   <style>
@@ -50,8 +54,7 @@
     var tone = { 'In progress': 'neutral', 'Done': 'success', 'Overdue': 'danger', 'Due soon': 'warning' };
     var statuses = ['In progress', 'Due soon', 'Done', 'Overdue'];
 
-    function setTheme(dark) { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; }
-    // Shared with the Klar site, so the demo and the page around it always show the same theme.
+    // Shared with the Klar site, so both open in the theme last picked here.
     function savedTheme() { try { return localStorage.getItem('klar-theme'); } catch (e) { return null; } }
     function saveTheme(dark) { try { localStorage.setItem('klar-theme', dark ? 'dark' : 'light'); } catch (e) {} }
 
@@ -61,19 +64,15 @@
       var dark = React.useState(savedTheme() ? savedTheme() === 'dark' : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
       var palette = React.useState(false);
       var drawer = React.useState(null);
+      var drawerKey = React.useState(0);
       var confirm = React.useState(null);
+      // Overlays stay rendered with their last content while they animate out.
+      var lastDrawer = React.useRef(null), lastConfirm = React.useRef(null);
+      if (drawer[0]) lastDrawer.current = drawer[0];
+      if (confirm[0]) lastConfirm.current = confirm[0];
 
-      React.useEffect(function () { setTheme(dark[0]); }, [dark[0]]);
-      React.useEffect(function () {
-        function onMessage(e) { if (e.origin === location.origin && e.data && e.data.klarTheme) dark[1](e.data.klarTheme === 'dark'); }
-        window.addEventListener('message', onMessage);
-        return function () { window.removeEventListener('message', onMessage); };
-      }, []);
-      function chooseDark(value) {
-        dark[1](value);
-        saveTheme(value);
-        if (window.parent !== window) window.parent.postMessage({ klarTheme: value ? 'dark' : 'light' }, location.origin);
-      }
+      function chooseDark(value) { dark[1](value); saveTheme(value); K.setTheme(value ? 'dark' : 'light'); }
+      function openDrawer(task) { drawerKey[1](function (k) { return k + 1; }); drawer[1](task); }
       React.useEffect(function () {
         function onKey(e) { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette[1](true); } }
         document.addEventListener('keydown', onKey);
@@ -96,7 +95,7 @@
 
       function rowMenu(t) {
         return [
-          { label: 'Edit', icon: 'edit', shortcut: 'E', onSelect: function () { drawer[1](t); } },
+          { label: 'Edit', icon: 'edit', shortcut: 'E', onSelect: function () { openDrawer(t); } },
           { label: 'Status', icon: 'circle-check', items: statuses.map(function (s) {
             return { label: s, checked: t.status === s, onSelect: function () { update(t.id, { status: s }); K.toast.success('Status set to ' + s); } };
           }) },
@@ -123,7 +122,7 @@
           h(K.Topbar, { breadcrumb: ['Workspace'], title: 'Overview', actions: h(React.Fragment, null,
             h(K.Tooltip, { content: 'Search', shortcut: '⌘K', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'search', 'aria-label': 'Search', onClick: function () { palette[1](true); } })),
             h(K.Switch, { 'aria-label': 'Dark mode', checked: dark[0], onChange: chooseDark }),
-            h(K.Button, { size: 'sm', icon: 'plus', shortcut: 'C', onClick: function () { drawer[1]({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); } }, 'New task')) }),
+            h(K.Button, { size: 'sm', icon: 'plus', shortcut: 'C', onClick: function () { openDrawer({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); } }, 'New task')) }),
           h('div', { className: 'content' }, h('div', { className: 'inner' },
             h('div', { className: 'head' },
               h('div', null, h('h1', { className: 'k-h1' }, 'Good evening, Ava'), h('p', null, 'You have 3 tasks due this week.')),
@@ -141,7 +140,7 @@
                 h('div', { style: { display: 'flex', gap: 8 } },
                   h(K.Button, { size: 'sm', variant: 'secondary', icon: 'filter' }, 'Filter'),
                   h(K.Button, { size: 'sm', variant: 'secondary', icon: 'upload', onClick: function () { K.toast.success({ title: 'Report exported', description: 'Sent to your email.' }); } }, 'Export'))),
-              visible.length ? h(K.Table, { onRowClick: function (r) { drawer[1](r); }, columns: [
+              visible.length ? h(K.Table, { onRowClick: function (r) { openDrawer(r); }, columns: [
                 { key: 'name', label: 'Task', strong: true, render: function (r) { return h(K.ContextMenu, { items: rowMenu(r) }, r.name); } },
                 { key: 'owner', label: 'Owner', render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.owner], size: 'sm' }), people[r.owner]); } },
                 { key: 'status', label: 'Status', render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } },
@@ -153,21 +152,21 @@
                 } }], rows: visible })
               : h(K.EmptyState, { icon: 'circle-check', title: 'Nothing here', description: 'No tasks match this view.' }),
               h('p', { className: 'hint' }, 'Tip: right-click a task name, open the ⋯ menu, or press ⌘K.'))))),
-        palette[0] ? h(K.CommandPalette, { overlay: true, autoFocus: true, onClose: function () { palette[1](false); }, items: [
-          { group: 'Suggestions', label: 'New task', icon: 'plus', shortcut: 'C', onSelect: function () { palette[1](false); drawer[1]({ id: 'KL-150', name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); } },
+        h(K.CommandPalette, { overlay: true, open: palette[0], autoFocus: true, onClose: function () { palette[1](false); }, items: [
+          { group: 'Suggestions', label: 'New task', icon: 'plus', shortcut: 'C', onSelect: function () { palette[1](false); openDrawer({ id: 'KL-150', name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); } },
           { group: 'Suggestions', label: dark[0] ? 'Switch to light mode' : 'Switch to dark mode', icon: 'settings', onSelect: function () { palette[1](false); chooseDark(!dark[0]); } },
           { group: 'Go to', label: 'Overview', icon: 'home', shortcut: 'G O', onSelect: function () { palette[1](false); } },
           { group: 'Go to', label: 'Inbox', icon: 'inbox', shortcut: 'G I', onSelect: function () { palette[1](false); } },
           { group: 'Go to', label: 'Calendar', icon: 'calendar', shortcut: 'G C', onSelect: function () { palette[1](false); } },
-          { group: 'Account', label: 'Sign out', icon: 'logout', onSelect: function () { palette[1](false); K.toast('Signed out'); } }] }) : null,
-        drawer[0] ? h(TaskDrawer, { task: drawer[0], onClose: function () { drawer[1](null); }, onSave: function (t) {
+          { group: 'Account', label: 'Sign out', icon: 'logout', onSelect: function () { palette[1](false); K.toast('Signed out'); } }] }),
+        lastDrawer.current ? h(TaskDrawer, { key: drawerKey[0], open: !!drawer[0], task: lastDrawer.current, onClose: function () { drawer[1](null); }, onSave: function (t) {
           if (t.isNew) { delete t.isNew; tasks[1]([t].concat(tasks[0])); K.toast.success({ title: 'Task created', description: '"' + t.name + '" was added.' }); }
           else { update(t.id, t); K.toast.success('Changes saved'); }
           drawer[1](null);
         } }) : null,
-        confirm[0] ? h(K.Dialog, { overlay: true, title: 'Delete task?', message: '"' + confirm[0].name + '" will be permanently deleted.', actions: [
+        lastConfirm.current ? h(K.Dialog, { overlay: true, open: !!confirm[0], onClose: function () { confirm[1](null); }, title: 'Delete task?', message: '"' + lastConfirm.current.name + '" will be permanently deleted.', actions: [
           { label: 'Cancel', variant: 'secondary', onClick: function () { confirm[1](null); } },
-          { label: 'Delete task', variant: 'danger', onClick: function () { remove(confirm[0]); confirm[1](null); } }] }) : null,
+          { label: 'Delete task', variant: 'danger', onClick: function () { remove(lastConfirm.current); confirm[1](null); } }] }) : null,
         h(K.Toaster));
     }
 
@@ -175,7 +174,7 @@
       var draft = React.useState(Object.assign({}, p.task));
       var error = React.useState('');
       function set(k) { return function (e) { var v = e && e.target ? e.target.value : e; var n = Object.assign({}, draft[0]); n[k] = v; draft[1](n); }; }
-      return h(K.Drawer, { overlay: true, title: p.task.isNew ? 'New task' : 'Edit task', description: p.task.id, onClose: p.onClose,
+      return h(K.Drawer, { overlay: true, open: p.open, title: p.task.isNew ? 'New task' : 'Edit task', description: p.task.id, onClose: p.onClose,
         footer: h(React.Fragment, null,
           h(K.Button, { variant: 'secondary', onClick: p.onClose }, 'Cancel'),
           h(K.Button, { onClick: function () { if (!draft[0].name.trim()) { error[1]('Give the task a name'); return; } p.onSave(draft[0]); } }, p.task.isNew ? 'Create task' : 'Save')) },

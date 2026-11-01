@@ -146,6 +146,7 @@ toast({
 - Set `data-theme="light"` or `data-theme="dark"` on `<html>`, or on any element to theme just that subtree.
 - The `.dark` class works too, so [next-themes](https://github.com/pacocoursey/next-themes) works with `attribute="class"`.
 - With neither, Klar follows the system preference.
+- `setTheme('dark' | 'light' | 'system')` switches with one calm crossfade (View Transitions where the browser supports them) instead of every color changing on its own. With next-themes, use `disableTransitionOnChange` for the same effect.
 
 ### Tailwind v4
 

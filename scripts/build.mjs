@@ -20,7 +20,7 @@ const themed = (theme) =>
   [...tokens.color.tokens, ...(tokens.shadow?.tokens ?? [])]
     .map((t) => `  --${t.name}: ${val(t, theme)};`)
     .join('\n');
-const flat = ['spacing', 'radius', 'size', 'zIndex']
+const flat = ['spacing', 'radius', 'size', 'zIndex', 'motion']
   .flatMap((fam) => tokens[fam]?.tokens ?? [])
   .map((t) => `  --${t.name}: ${t.value};`)
   .join('\n');

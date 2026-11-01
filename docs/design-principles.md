@@ -55,8 +55,11 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 
 ## Motion
 
-- Fast and subtle: 120 ms for colors and borders, 150 ms for switch and accordion, 180 ms when a toast slides in, 300 ms for progress. Easing `ease`.
-- No bounce, no scaling on press. `prefers-reduced-motion` turns transitions off.
+- Quick and calm, from three duration tokens: `duration-fast` (120 ms) for hover, color changes and everything that closes; `duration-base` (180 ms) for menus, tooltips, toasts and accordions opening; `duration-slow` (240 ms) for dialogs, the drawer, the command palette and the theme switch.
+- Things arrive with `ease-out` and leave with `ease-in`, and they leave faster than they arrive.
+- Only `opacity` and `transform` move: menus drop 4 px into place, dialogs rise 8 px, the drawer slides from its side, toasts rise from below. Never width, height or position.
+- Switching theme is one crossfade of the whole page (`setTheme()`), never every color changing on its own.
+- No bounce, no scaling on press. `prefers-reduced-motion` turns transitions and entrances off.
 
 ## Interaction and states
 

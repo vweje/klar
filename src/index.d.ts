@@ -6,6 +6,8 @@ export interface KlarStrings { search: string; selected: string; breadcrumb: str
 export declare const locales: { en: KlarStrings; da: KlarStrings };
 /** Switch built-in texts globally: setStrings('da'), or pass your own partial set. Call once before rendering. */
 export declare function setStrings(next: 'en' | 'da' | Partial<KlarStrings>): KlarStrings;
+/** Sets data-theme on <html> with one crossfade (View Transitions where supported). 'system' follows the OS setting. */
+export declare function setTheme(theme: 'light' | 'dark' | 'system'): void;
 
 export type IconName = 'chevron-right' | 'chevron-down' | 'arrow-right' | 'search' | 'check' | 'xmark' | 'plus' | 'more' | 'home' | 'inbox' | 'folder' | 'calendar' | 'chart' | 'person' | 'settings' | 'bell' | 'lock' | 'info';
 
@@ -50,8 +52,8 @@ export interface SidebarProps { items: SidebarItem[]; value?: string; defaultVal
 export declare function Sidebar(props: SidebarProps): React.ReactElement;
 
 export interface DialogAction { label: string; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; onClick?: () => void }
-export interface DialogProps { title: React.ReactNode; message?: React.ReactNode; actions?: DialogAction[]; overlay?: boolean; children?: React.ReactNode; className?: string }
-export declare function Dialog(props: DialogProps): React.ReactElement;
+export interface DialogProps { title: React.ReactNode; message?: React.ReactNode; actions?: DialogAction[]; overlay?: boolean; /** Keep it rendered and toggle this to animate it in and out. */ open?: boolean; /** Called on Esc and on a click on the scrim. */ onClose?: () => void; children?: React.ReactNode; className?: string }
+export declare function Dialog(props: DialogProps): React.ReactElement | null;
 
 export interface IconProps { name: IconName; size?: number; weight?: number; label?: string; className?: string }
 export declare function Icon(props: IconProps): React.ReactElement;
@@ -100,8 +102,8 @@ export declare function MenuPanel(props: { items: MenuItem[]; onClose?: () => vo
 export declare function Menu(props: { items: MenuItem[]; trigger?: React.ReactElement; align?: 'start' | 'end'; defaultOpen?: boolean; defaultOpenSub?: number; className?: string }): React.ReactElement;
 export declare function ContextMenu(props: { items: MenuItem[]; children: React.ReactNode; defaultOpenAt?: { x: number; y: number }; defaultOpenSub?: number; className?: string }): React.ReactElement;
 export interface CommandItem { label: string; group?: string; icon?: IconName; shortcut?: string; onSelect?: () => void }
-export declare function CommandPalette(props: { items: CommandItem[]; placeholder?: string; overlay?: boolean; autoFocus?: boolean; onClose?: () => void; className?: string }): React.ReactElement;
-export interface DrawerProps { title: React.ReactNode; description?: React.ReactNode; side?: 'right' | 'left'; footer?: React.ReactNode; overlay?: boolean; onClose?: (() => void) | null; children?: React.ReactNode; className?: string }
-export declare function Drawer(props: DrawerProps): React.ReactElement;
+export declare function CommandPalette(props: { items: CommandItem[]; placeholder?: string; overlay?: boolean; open?: boolean; autoFocus?: boolean; onClose?: () => void; className?: string }): React.ReactElement | null;
+export interface DrawerProps { title: React.ReactNode; description?: React.ReactNode; side?: 'right' | 'left'; footer?: React.ReactNode; overlay?: boolean; /** Keep it rendered and toggle this to animate it in and out. */ open?: boolean; onClose?: (() => void) | null; children?: React.ReactNode; className?: string }
+export declare function Drawer(props: DrawerProps): React.ReactElement | null;
 
-declare global { interface Window { Klar: { Button: typeof Button; TextField: typeof TextField; SearchField: typeof SearchField; Checkbox: typeof Checkbox; Switch: typeof Switch; SegmentedControl: typeof SegmentedControl; List: typeof List; ListRow: typeof ListRow; Card: typeof Card; Badge: typeof Badge; ProgressBar: typeof ProgressBar; Topbar: typeof Topbar; Sidebar: typeof Sidebar; Dialog: typeof Dialog; Icon: typeof Icon; Kbd: typeof Kbd; Textarea: typeof Textarea; Select: typeof Select; RadioGroup: typeof RadioGroup; Slider: typeof Slider; Avatar: typeof Avatar; AvatarGroup: typeof AvatarGroup; Tooltip: typeof Tooltip; Tabs: typeof Tabs; Stat: typeof Stat; Table: typeof Table; EmptyState: typeof EmptyState; Skeleton: typeof Skeleton; Spinner: typeof Spinner; Pagination: typeof Pagination; Accordion: typeof Accordion; Callout: typeof Callout; Toast: typeof Toast; Toaster: typeof Toaster; MenuPanel: typeof MenuPanel; Menu: typeof Menu; ContextMenu: typeof ContextMenu; CommandPalette: typeof CommandPalette; Drawer: typeof Drawer; toast: ToastFn; setStrings: typeof setStrings; locales: typeof locales } } }
+declare global { interface Window { Klar: { Button: typeof Button; TextField: typeof TextField; SearchField: typeof SearchField; Checkbox: typeof Checkbox; Switch: typeof Switch; SegmentedControl: typeof SegmentedControl; List: typeof List; ListRow: typeof ListRow; Card: typeof Card; Badge: typeof Badge; ProgressBar: typeof ProgressBar; Topbar: typeof Topbar; Sidebar: typeof Sidebar; Dialog: typeof Dialog; Icon: typeof Icon; Kbd: typeof Kbd; Textarea: typeof Textarea; Select: typeof Select; RadioGroup: typeof RadioGroup; Slider: typeof Slider; Avatar: typeof Avatar; AvatarGroup: typeof AvatarGroup; Tooltip: typeof Tooltip; Tabs: typeof Tabs; Stat: typeof Stat; Table: typeof Table; EmptyState: typeof EmptyState; Skeleton: typeof Skeleton; Spinner: typeof Spinner; Pagination: typeof Pagination; Accordion: typeof Accordion; Callout: typeof Callout; Toast: typeof Toast; Toaster: typeof Toaster; MenuPanel: typeof MenuPanel; Menu: typeof Menu; ContextMenu: typeof ContextMenu; CommandPalette: typeof CommandPalette; Drawer: typeof Drawer; toast: ToastFn; setStrings: typeof setStrings; setTheme: typeof setTheme; locales: typeof locales } } }
