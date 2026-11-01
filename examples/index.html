@@ -18,10 +18,11 @@
     .app .k-sidebar { flex: none; height: 100%; }
     .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .content { flex: 1; overflow: auto; padding: var(--space-8); }
-    .inner { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-6); }
+    .inner { display: flex; flex-direction: column; gap: var(--space-6); }
     .head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
     .head h1 { margin: 0; }
     .head p { margin: 4px 0 0; color: var(--text-secondary); }
+    .actions { display: flex; align-items: center; gap: var(--space-2); }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
     .bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); flex-wrap: wrap; }
     .logo { display: flex; align-items: center; gap: 10px; }
@@ -31,13 +32,38 @@
     .me small { display: block; font-weight: 500; font-size: 12px; color: var(--text-secondary); }
     .person { display: inline-flex; align-items: center; gap: 8px; }
     .hint { font-size: 12px; color: var(--text-muted); }
-    @media (max-width: 860px) { .app .k-sidebar { display: none; } .content { padding: var(--space-6); } }
+
+    /* Settings: label column on the left, controls on the right, hairlines between sections */
+    .set-row { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, 2fr); gap: var(--space-8); padding: var(--space-6) 0; border-top: 1px solid var(--border); }
+    .set-row h2 { margin: 0; }
+    .set-row p { margin: 4px 0 0; max-width: 360px; color: var(--text-secondary); }
+    .set-fields { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); min-width: 0; }
+    .set-fields > .k-field, .set-fields > .k-list, .set-pair { align-self: stretch; }
+    .set-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+    .set-profile { display: flex; align-items: center; gap: var(--space-4); }
+    .set-profile strong { display: block; font-size: 15px; }
+    .set-profile span { color: var(--text-secondary); }
+
+    /* Task screen inside the modal: content on the left, details on the right */
+    .task { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-8); }
+    .task__main { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; }
+    .task__main .k-textarea { min-height: 220px; }
+    .task__side { display: flex; flex-direction: column; gap: var(--space-5); padding-left: var(--space-8); border-left: 1px solid var(--border); }
+
+    @media (max-width: 860px) {
+      .app .k-sidebar { display: none; }
+      .content { padding: var(--space-6); }
+      .set-row { grid-template-columns: 1fr; gap: var(--space-4); }
+      .set-pair { grid-template-columns: 1fr; }
+      .task { grid-template-columns: 1fr; }
+      .task__side { padding-left: 0; border-left: 0; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" integrity="sha512-QVs8Lo43F9lSuBykadDb0oSXDL/BbZ588urWVCRwSIoewQv/Ewg1f84mK3U790bZ0FfhFa1YSQUmIhG+pIRKeg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" integrity="sha512-6a1107rTlA4gYpgHAqbwLAtxmWipBdJFcq8y5S/aTge3Bp+VAklABm2LO+Kg51vOWR9JMZq1Ovjl5tpluNpTeQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <!-- From a CDN: https://cdn.jsdelivr.net/gh/vweje/klar@main/dist/klar.umd.js -->
   <script src="../dist/klar.umd.js"></script>
   <script>
@@ -53,31 +79,49 @@
     ];
     var tone = { 'In progress': 'neutral', 'Done': 'success', 'Overdue': 'danger', 'Due soon': 'warning' };
     var statuses = ['In progress', 'Due soon', 'Done', 'Overdue'];
+    var notifications = [
+      { id: 'assigned', title: 'Assigned to me', subtitle: 'When someone gives you a task.', on: true },
+      { id: 'mentions', title: 'Mentions', subtitle: 'When someone mentions you in a comment.', on: true },
+      { id: 'summary', title: 'Weekly summary', subtitle: 'Every Monday morning.', on: false },
+      { id: 'product', title: 'Product updates', subtitle: 'New features, a few times a year.', on: false }
+    ];
 
     // Shared with the Klar site, so both open in the theme last picked here.
-    function savedTheme() { try { return localStorage.getItem('klar-theme'); } catch (e) { return null; } }
-    function saveTheme(dark) { try { localStorage.setItem('klar-theme', dark ? 'dark' : 'light'); } catch (e) {} }
+    var darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    function savedTheme() { try { return localStorage.getItem('klar-theme') || 'system'; } catch (e) { return 'system'; } }
+    function saveTheme(theme) { try { if (theme === 'system') localStorage.removeItem('klar-theme'); else localStorage.setItem('klar-theme', theme); } catch (e) {} }
 
     function App() {
       var tasks = React.useState(initialTasks);
       var tab = React.useState('all');
-      var dark = React.useState(savedTheme() ? savedTheme() === 'dark' : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var view = React.useState(location.hash === '#settings' ? 'settings' : 'home');
+      var theme = React.useState(savedTheme());
+      var systemDark = React.useState(darkQuery.matches);
+      var lang = React.useState('en');
+      var profile = React.useState({ name: people.ava, title: 'Product designer', email: 'ava@example.com' });
       var palette = React.useState(false);
-      var drawer = React.useState(null);
-      var drawerKey = React.useState(0);
+      var editing = React.useState(null);
+      var editorKey = React.useState(0);
       var confirm = React.useState(null);
       // Overlays stay rendered with their last content while they animate out.
-      var lastDrawer = React.useRef(null), lastConfirm = React.useRef(null);
-      if (drawer[0]) lastDrawer.current = drawer[0];
+      var lastEditing = React.useRef(null), lastConfirm = React.useRef(null);
+      if (editing[0]) lastEditing.current = editing[0];
       if (confirm[0]) lastConfirm.current = confirm[0];
+      var dark = theme[0] === 'dark' || (theme[0] === 'system' && systemDark[0]);
 
-      function chooseDark(value) { dark[1](value); saveTheme(value); K.setTheme(value ? 'dark' : 'light'); }
-      function openDrawer(task) { drawerKey[1](function (k) { return k + 1; }); drawer[1](task); }
       React.useEffect(function () {
+        function onScheme(e) { systemDark[1](e.matches); }
         function onKey(e) { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette[1](true); } }
+        darkQuery.addEventListener('change', onScheme);
         document.addEventListener('keydown', onKey);
-        return function () { document.removeEventListener('keydown', onKey); };
+        return function () { darkQuery.removeEventListener('change', onScheme); document.removeEventListener('keydown', onKey); };
       }, []);
+
+      function chooseTheme(next) { theme[1](next); saveTheme(next); K.setTheme(next); }
+      function chooseLang(next) { K.setStrings(next); lang[1](next); }
+      function go(id) { view[1](id); history.replaceState(null, '', id === 'settings' ? '#settings' : location.pathname + location.search); }
+      function openEditor(task) { editorKey[1](function (k) { return k + 1; }); editing[1](task); }
+      function newTask() { openEditor({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); }
 
       function update(id, patch) { tasks[1](tasks[0].map(function (t) { return t.id === id ? Object.assign({}, t, patch) : t; })); }
       function remove(task) {
@@ -95,7 +139,7 @@
 
       function rowMenu(t) {
         return [
-          { label: 'Edit', icon: 'edit', shortcut: 'E', onSelect: function () { openDrawer(t); } },
+          { label: 'Edit', icon: 'edit', shortcut: 'E', onSelect: function () { openEditor(t); } },
           { label: 'Status', icon: 'circle-check', items: statuses.map(function (s) {
             return { label: s, checked: t.status === s, onSelect: function () { update(t.id, { status: s }); K.toast.success('Status set to ' + s); } };
           }) },
@@ -105,64 +149,72 @@
         ];
       }
 
+      var overview = h('div', { className: 'inner' },
+        h('div', { className: 'head' },
+          h('div', null, h('h1', { className: 'k-h1' }, 'Good evening, Ava'), h('p', null, 'You have 3 tasks due this week.')),
+          h(K.SegmentedControl, { options: ['7 days', '30 days', '12 months'], defaultValue: '30 days', 'aria-label': 'Period' })),
+        h('div', { className: 'stats' },
+          h(K.Stat, { label: 'Revenue', icon: 'chart', value: '$48,250', delta: '+12.4%', trend: 'up', caption: 'vs. last month' }),
+          h(K.Stat, { label: 'Tasks completed', icon: 'circle-check', value: '86', delta: '+18', trend: 'up', caption: 'this month' }),
+          h(K.Stat, { label: 'Overdue', icon: 'alert', value: String(tasks[0].filter(function (t) { return t.status === 'Overdue'; }).length), delta: '+2', trend: 'down', caption: 'since Monday' })),
+        h('div', null,
+          h('div', { className: 'bar' },
+            h(K.Tabs, { value: tab[0], onChange: tab[1], items: [
+              { id: 'all', label: 'All', count: tasks[0].length },
+              { id: 'mine', label: 'Mine', count: tasks[0].filter(function (t) { return t.owner === 'ava'; }).length },
+              { id: 'late', label: 'Overdue', count: tasks[0].filter(function (t) { return t.status === 'Overdue'; }).length }] }),
+            h('div', { className: 'actions' },
+              h(K.Button, { size: 'sm', variant: 'secondary', icon: 'filter' }, 'Filter'),
+              h(K.Button, { size: 'sm', variant: 'secondary', icon: 'upload', onClick: function () { K.toast.success({ title: 'Report exported', description: 'Sent to your email.' }); } }, 'Export'))),
+          visible.length ? h(K.Table, { onRowClick: function (r) { openEditor(r); }, columns: [
+            { key: 'name', label: 'Task', strong: true, render: function (r) { return h(K.ContextMenu, { items: rowMenu(r) }, r.name); } },
+            { key: 'owner', label: 'Owner', render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.owner], size: 'sm' }), people[r.owner]); } },
+            { key: 'status', label: 'Status', render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } },
+            { key: 'due', label: 'Due' },
+            { key: 'id', label: 'ID', mono: true, align: 'right' },
+            { key: 'menu', label: '', width: 48, align: 'right', render: function (r) {
+              return h('span', { onClick: function (e) { e.stopPropagation(); } },
+                h(K.Menu, { align: 'end', items: rowMenu(r), trigger: h(K.Button, { size: 'sm', variant: 'ghost', icon: 'more', 'aria-label': 'Actions for ' + r.name }) }));
+            } }], rows: visible })
+          : h(K.EmptyState, { icon: 'circle-check', title: 'Nothing here', description: 'No tasks match this view.' }),
+          h('p', { className: 'hint' }, 'Tip: click a task to open it, right-click its name, open the ⋯ menu, or press ⌘K.')));
+
+      var onSettings = view[0] === 'settings';
+
       return h('div', { className: 'app' },
-        h(K.Sidebar, { defaultValue: 'home',
+        h(K.Sidebar, { value: view[0], onChange: go,
           header: h('div', { className: 'logo' }, h('b', null, 'K'), h('span', null, 'Klar')),
           items: [
             { id: 'home', label: 'Overview', icon: 'home' },
             { id: 'inbox', label: 'Inbox', icon: 'inbox', count: 4 },
             { id: 'cal', label: 'Calendar', icon: 'calendar' },
             { id: 'reports', label: 'Reports', icon: 'chart' },
+            { id: 'settings', label: 'Settings', icon: 'settings' },
             { section: 'Projects' },
             { id: 'p1', label: 'Website', icon: 'folder', count: 12 },
             { id: 'p2', label: 'Mobile app', icon: 'folder', count: 4 },
             { id: 'p3', label: 'Archive', icon: 'folder' }],
-          footer: h('div', { className: 'me' }, h(K.Avatar, { name: people.ava, status: 'online' }), h('div', null, people.ava, h('small', null, 'Pro plan'))) }),
+          footer: h('div', { className: 'me' }, h(K.Avatar, { name: profile[0].name || '?', status: 'online' }), h('div', null, profile[0].name, h('small', null, 'Pro plan'))) }),
         h('div', { className: 'main' },
-          h(K.Topbar, { breadcrumb: ['Workspace'], title: 'Overview', actions: h(React.Fragment, null,
+          h(K.Topbar, { breadcrumb: ['Workspace'], title: onSettings ? 'Settings' : 'Overview', actions: h(React.Fragment, null,
             h(K.Tooltip, { content: 'Search', shortcut: '⌘K', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'search', 'aria-label': 'Search', onClick: function () { palette[1](true); } })),
-            h(K.Switch, { 'aria-label': 'Dark mode', checked: dark[0], onChange: chooseDark }),
-            h(K.Button, { size: 'sm', icon: 'plus', shortcut: 'C', onClick: function () { openDrawer({ id: 'KL-' + (143 + tasks[0].length), name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); } }, 'New task')) }),
-          h('div', { className: 'content' }, h('div', { className: 'inner' },
-            h('div', { className: 'head' },
-              h('div', null, h('h1', { className: 'k-h1' }, 'Good evening, Ava'), h('p', null, 'You have 3 tasks due this week.')),
-              h(K.SegmentedControl, { options: ['7 days', '30 days', '12 months'], defaultValue: '30 days', 'aria-label': 'Period' })),
-            h('div', { className: 'stats' },
-              h(K.Stat, { label: 'Revenue', icon: 'chart', value: '$48,250', delta: '+12.4%', trend: 'up', caption: 'vs. last month' }),
-              h(K.Stat, { label: 'Tasks completed', icon: 'circle-check', value: '86', delta: '+18', trend: 'up', caption: 'this month' }),
-              h(K.Stat, { label: 'Overdue', icon: 'alert', value: String(tasks[0].filter(function (t) { return t.status === 'Overdue'; }).length), delta: '+2', trend: 'down', caption: 'since Monday' })),
-            h('div', null,
-              h('div', { className: 'bar' },
-                h(K.Tabs, { value: tab[0], onChange: tab[1], items: [
-                  { id: 'all', label: 'All', count: tasks[0].length },
-                  { id: 'mine', label: 'Mine', count: tasks[0].filter(function (t) { return t.owner === 'ava'; }).length },
-                  { id: 'late', label: 'Overdue', count: tasks[0].filter(function (t) { return t.status === 'Overdue'; }).length }] }),
-                h('div', { style: { display: 'flex', gap: 8 } },
-                  h(K.Button, { size: 'sm', variant: 'secondary', icon: 'filter' }, 'Filter'),
-                  h(K.Button, { size: 'sm', variant: 'secondary', icon: 'upload', onClick: function () { K.toast.success({ title: 'Report exported', description: 'Sent to your email.' }); } }, 'Export'))),
-              visible.length ? h(K.Table, { onRowClick: function (r) { openDrawer(r); }, columns: [
-                { key: 'name', label: 'Task', strong: true, render: function (r) { return h(K.ContextMenu, { items: rowMenu(r) }, r.name); } },
-                { key: 'owner', label: 'Owner', render: function (r) { return h('span', { className: 'person' }, h(K.Avatar, { name: people[r.owner], size: 'sm' }), people[r.owner]); } },
-                { key: 'status', label: 'Status', render: function (r) { return h(K.Badge, { tone: tone[r.status] }, r.status); } },
-                { key: 'due', label: 'Due' },
-                { key: 'id', label: 'ID', mono: true, align: 'right' },
-                { key: 'menu', label: '', width: 48, align: 'right', render: function (r) {
-                  return h('span', { onClick: function (e) { e.stopPropagation(); } },
-                    h(K.Menu, { align: 'end', items: rowMenu(r), trigger: h(K.Button, { size: 'sm', variant: 'ghost', icon: 'more', 'aria-label': 'Actions for ' + r.name }) }));
-                } }], rows: visible })
-              : h(K.EmptyState, { icon: 'circle-check', title: 'Nothing here', description: 'No tasks match this view.' }),
-              h('p', { className: 'hint' }, 'Tip: right-click a task name, open the ⋯ menu, or press ⌘K.'))))),
+            onSettings ? null : h(K.Tooltip, { content: 'Settings', side: 'bottom' }, h(K.Button, { size: 'sm', variant: 'ghost', icon: 'settings', 'aria-label': 'Settings', onClick: function () { go('settings'); } })),
+            h(K.Switch, { 'aria-label': 'Dark mode', checked: dark, onChange: function (on) { chooseTheme(on ? 'dark' : 'light'); } }),
+            onSettings ? null : h(K.Button, { size: 'sm', icon: 'plus', shortcut: 'C', onClick: newTask }, 'New task')) }),
+          h('div', { className: 'content' },
+            onSettings ? h(Settings, { profile: profile[0], onSaveProfile: profile[1], theme: theme[0], onTheme: chooseTheme, lang: lang[0], onLang: chooseLang }) : overview)),
         h(K.CommandPalette, { overlay: true, open: palette[0], autoFocus: true, onClose: function () { palette[1](false); }, items: [
-          { group: 'Suggestions', label: 'New task', icon: 'plus', shortcut: 'C', onSelect: function () { palette[1](false); openDrawer({ id: 'KL-150', name: '', owner: 'ava', status: 'In progress', due: 'Nov 15', isNew: true }); } },
-          { group: 'Suggestions', label: dark[0] ? 'Switch to light mode' : 'Switch to dark mode', icon: 'settings', onSelect: function () { palette[1](false); chooseDark(!dark[0]); } },
-          { group: 'Go to', label: 'Overview', icon: 'home', shortcut: 'G O', onSelect: function () { palette[1](false); } },
-          { group: 'Go to', label: 'Inbox', icon: 'inbox', shortcut: 'G I', onSelect: function () { palette[1](false); } },
-          { group: 'Go to', label: 'Calendar', icon: 'calendar', shortcut: 'G C', onSelect: function () { palette[1](false); } },
+          { group: 'Suggestions', label: 'New task', icon: 'plus', shortcut: 'C', onSelect: function () { palette[1](false); go('home'); newTask(); } },
+          { group: 'Suggestions', label: dark ? 'Switch to light mode' : 'Switch to dark mode', icon: 'settings', onSelect: function () { palette[1](false); chooseTheme(dark ? 'light' : 'dark'); } },
+          { group: 'Go to', label: 'Overview', icon: 'home', shortcut: 'G O', onSelect: function () { palette[1](false); go('home'); } },
+          { group: 'Go to', label: 'Inbox', icon: 'inbox', shortcut: 'G I', onSelect: function () { palette[1](false); go('inbox'); } },
+          { group: 'Go to', label: 'Calendar', icon: 'calendar', shortcut: 'G C', onSelect: function () { palette[1](false); go('cal'); } },
+          { group: 'Go to', label: 'Settings', icon: 'settings', shortcut: 'G S', onSelect: function () { palette[1](false); go('settings'); } },
           { group: 'Account', label: 'Sign out', icon: 'logout', onSelect: function () { palette[1](false); K.toast('Signed out'); } }] }),
-        lastDrawer.current ? h(TaskDrawer, { key: drawerKey[0], open: !!drawer[0], task: lastDrawer.current, onClose: function () { drawer[1](null); }, onSave: function (t) {
+        lastEditing.current ? h(TaskEditor, { key: editorKey[0], open: !!editing[0], task: lastEditing.current, onClose: function () { editing[1](null); }, onSave: function (t) {
           if (t.isNew) { delete t.isNew; tasks[1]([t].concat(tasks[0])); K.toast.success({ title: 'Task created', description: '"' + t.name + '" was added.' }); }
           else { update(t.id, t); K.toast.success('Changes saved'); }
-          drawer[1](null);
+          editing[1](null);
         } }) : null,
         lastConfirm.current ? h(K.Dialog, { overlay: true, open: !!confirm[0], onClose: function () { confirm[1](null); }, title: 'Delete task?', message: '"' + lastConfirm.current.name + '" will be permanently deleted.', actions: [
           { label: 'Cancel', variant: 'secondary', onClick: function () { confirm[1](null); } },
@@ -170,18 +222,82 @@
         h(K.Toaster));
     }
 
-    function TaskDrawer(p) {
-      var draft = React.useState(Object.assign({}, p.task));
+    function TaskEditor(p) {
+      var draft = React.useState(Object.assign({ notes: '' }, p.task));
       var error = React.useState('');
-      function set(k) { return function (e) { var v = e && e.target ? e.target.value : e; var n = Object.assign({}, draft[0]); n[k] = v; draft[1](n); }; }
-      return h(K.Drawer, { overlay: true, open: p.open, title: p.task.isNew ? 'New task' : 'Edit task', description: p.task.id, onClose: p.onClose,
+      function set(k) { return function (e) { var v = e && e.target ? e.target.value : e; var n = Object.assign({}, draft[0]); n[k] = v; draft[1](n); if (k === 'name') error[1](''); }; }
+      function save() { if (!draft[0].name.trim()) { error[1]('Give the task a name'); return; } p.onSave(draft[0]); }
+      return h(K.Modal, { open: p.open, onClose: p.onClose,
+        title: p.task.isNew ? 'New task' : 'Edit task',
+        description: p.task.isNew ? 'It will be added to the Website project.' : p.task.id + ' · Website',
         footer: h(React.Fragment, null,
           h(K.Button, { variant: 'secondary', onClick: p.onClose }, 'Cancel'),
-          h(K.Button, { onClick: function () { if (!draft[0].name.trim()) { error[1]('Give the task a name'); return; } p.onSave(draft[0]); } }, p.task.isNew ? 'Create task' : 'Save')) },
-        h(K.TextField, { label: 'Name', value: draft[0].name, onChange: set('name'), placeholder: 'What needs to be done?', error: error[0] || undefined, autoFocus: true }),
-        h(K.Select, { label: 'Owner', value: draft[0].owner, onChange: set('owner'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) }),
-        h(K.RadioGroup, { 'aria-label': 'Status', value: draft[0].status, onChange: set('status'), options: statuses }),
-        h(K.Textarea, { label: 'Notes', rows: 3, maxLength: 280, placeholder: 'Add details for the team' }));
+          h(K.Button, { icon: 'check', onClick: save }, p.task.isNew ? 'Create task' : 'Save changes')) },
+        h('div', { className: 'task' },
+          h('div', { className: 'task__main' },
+            h(K.TextField, { label: 'Name', value: draft[0].name, onChange: set('name'), placeholder: 'What needs to be done?', error: error[0] || undefined, autoFocus: true }),
+            h(K.Textarea, { label: 'Notes', rows: 10, maxLength: 2000, value: draft[0].notes, onChange: set('notes'), placeholder: 'Add details, links and decisions for the team' }),
+            p.task.isNew ? null : h(K.List, { header: 'Activity' },
+              h(K.ListRow, { icon: 'circle-check', title: 'Status set to ' + p.task.status, subtitle: 'Today at 9:14 AM' }),
+              h(K.ListRow, { icon: 'person', title: 'Assigned to ' + people[p.task.owner], subtitle: 'Oct 24' }),
+              h(K.ListRow, { icon: 'plus', title: 'Task created', subtitle: 'Oct 21' }))),
+          h('aside', { className: 'task__side' },
+            h(K.Select, { label: 'Owner', value: draft[0].owner, onChange: set('owner'), options: Object.keys(people).map(function (k) { return { value: k, label: people[k] }; }) }),
+            h(K.TextField, { label: 'Due', value: draft[0].due, onChange: set('due') }),
+            h('div', { className: 'k-field' },
+              h('span', { className: 'k-field__label' }, 'Status'),
+              h(K.RadioGroup, { 'aria-label': 'Status', value: draft[0].status, onChange: set('status'), options: statuses })))));
+    }
+
+    function SettingsRow(p) {
+      return h('section', { className: 'set-row' },
+        h('div', null, h('h2', { className: 'k-h3' }, p.title), h('p', null, p.description)),
+        h('div', { className: 'set-fields' }, p.children));
+    }
+
+    function Settings(p) {
+      var draft = React.useState(p.profile);
+      var deleting = React.useState(false);
+      var dirty = Object.keys(draft[0]).some(function (k) { return draft[0][k] !== p.profile[k]; });
+      var emailError = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft[0].email) ? undefined : 'Enter a valid email address';
+      function set(k) { return function (e) { var n = Object.assign({}, draft[0]); n[k] = e.target.value; draft[1](n); }; }
+
+      return h('div', { className: 'inner' },
+        h('div', { className: 'head' },
+          h('div', null, h('h1', { className: 'k-h1' }, 'Settings'), h('p', null, 'Your profile, how Klar looks and what you hear about.')),
+          h('div', { className: 'actions' },
+            dirty ? h(K.Button, { variant: 'ghost', onClick: function () { draft[1](p.profile); } }, 'Discard') : null,
+            h(K.Button, { icon: 'check', disabled: !dirty || !!emailError, onClick: function () { p.onSaveProfile(draft[0]); K.toast.success('Settings saved'); } }, 'Save changes'))),
+        h('div', null,
+          h(SettingsRow, { title: 'Profile', description: 'How others see you in the workspace.' },
+            h('div', { className: 'set-profile' },
+              h(K.Avatar, { name: draft[0].name || '?', size: 'lg' }),
+              h('div', null, h('strong', null, draft[0].name || 'No name'), h('span', null, draft[0].title || 'No title')),
+              h(K.Button, { size: 'sm', variant: 'secondary', icon: 'upload', onClick: function () { K.toast('Photo upload is not part of the demo'); } }, 'Change photo')),
+            h('div', { className: 'set-pair' },
+              h(K.TextField, { label: 'Name', value: draft[0].name, onChange: set('name') }),
+              h(K.TextField, { label: 'Job title', value: draft[0].title, onChange: set('title') })),
+            h(K.TextField, { label: 'Email address', type: 'email', value: draft[0].email, onChange: set('email'), error: emailError, hint: emailError ? undefined : 'Used for sign-in and notifications.' })),
+          h(SettingsRow, { title: 'Appearance', description: 'How Klar looks on this device. System follows your operating system.' },
+            h(K.SegmentedControl, { 'aria-label': 'Theme', value: p.theme, onChange: p.onTheme, options: [
+              { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }] })),
+          h(SettingsRow, { title: 'Language', description: 'Used for built-in texts like search, close and pagination.' },
+            h(K.Select, { 'aria-label': 'Language', value: p.lang, onChange: function (e) { p.onLang(e.target.value); }, options: [
+              { value: 'en', label: 'English' }, { value: 'da', label: 'Dansk' }] })),
+          h(SettingsRow, { title: 'Notifications', description: 'Choose what you hear about. Changes apply right away.' },
+            h(K.List, null, notifications.map(function (n) {
+              return h(K.ListRow, { key: n.id, title: n.title, subtitle: n.subtitle, accessory: h(K.Switch, { 'aria-label': n.title, defaultChecked: n.on }) });
+            }))),
+          h(SettingsRow, { title: 'Security', description: 'Keep your account safe.' },
+            h(K.List, null,
+              h(K.ListRow, { icon: 'lock', title: 'Two-factor authentication', subtitle: 'Authenticator app', value: h(K.Badge, { tone: 'success' }, 'On') }),
+              h(K.ListRow, { icon: 'person', title: 'Password', subtitle: 'Changed 3 months ago', accessory: h(K.Button, { size: 'sm', variant: 'secondary', onClick: function () { K.toast('Password change is not part of the demo'); } }, 'Change') }),
+              h(K.ListRow, { icon: 'settings', title: 'Active sessions', subtitle: 'This browser and 1 other', accessory: 'chevron', onClick: function () { K.toast('2 active sessions'); } }))),
+          h(SettingsRow, { title: 'Delete workspace', description: 'Removes the workspace, its projects and every task for everyone. This cannot be undone.' },
+            h(K.Button, { variant: 'danger', icon: 'trash', onClick: function () { deleting[1](true); } }, 'Delete workspace'))),
+        h(K.Dialog, { overlay: true, open: deleting[0], onClose: function () { deleting[1](false); }, title: 'Delete workspace?', message: '"Workspace" and its 3 projects will be permanently deleted for everyone.', actions: [
+          { label: 'Cancel', variant: 'secondary', onClick: function () { deleting[1](false); } },
+          { label: 'Delete workspace', variant: 'danger', onClick: function () { deleting[1](false); K.toast({ title: 'Workspace deleted', description: 'This is a demo, so nothing was removed.' }); } }] }));
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(h(App));
