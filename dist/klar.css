@@ -333,14 +333,16 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-dd__chev { color: var(--text-secondary); transition: transform var(--duration-base) var(--ease-out); }
 .k-dd__trigger[aria-expanded="true"] .k-dd__chev { transform: rotate(180deg); }
 /* Doubled class names so these win over the .k-menu rules further down */
-.k-menu.k-dd__panel { position: fixed; z-index: var(--z-dropdown); display: flex; flex-direction: column; min-width: 0; max-height: 296px; padding: 0; overflow: hidden; }
-.k-dd__search { flex: none; display: flex; align-items: center; gap: var(--space-2); height: 44px; padding: 0 var(--space-3); border-bottom: 1px solid var(--border); color: var(--text-secondary); }
-.k-dd__search-input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; font: inherit; font-size: 14px; color: var(--text); outline: none; }
+.k-menu.k-dd__panel { position: fixed; z-index: var(--z-dropdown); display: flex; flex-direction: column; min-width: 0; max-height: 280px; padding: 0; overflow: hidden; }
+.k-dd__search { flex: none; display: flex; align-items: center; gap: var(--space-2); height: 38px; padding: 0 var(--space-3); border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.k-dd__search-input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; font: inherit; font-size: 13px; color: var(--text); outline: none; }
 .k-dd__search-input::placeholder { color: var(--text-muted); }
 .k-dd__list { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 4px; }
-.k-menu__item.k-dd__option { height: auto; min-height: 32px; padding-top: 6px; padding-bottom: 6px; cursor: pointer; }
+/* Lighter and more compact than action menus: a list to choose from, not commands */
+.k-menu__item.k-dd__option { box-sizing: border-box; height: auto; min-height: 30px; gap: var(--space-2); padding-top: 5px; padding-bottom: 5px; font-size: 13px; line-height: 18px; font-weight: 500; cursor: pointer; }
+.k-menu__item.k-dd__option[aria-selected="true"] { font-weight: 700; }
 .k-menu__item.k-dd__option--disabled, .k-menu__item.k-dd__option--disabled:hover { color: var(--text-disabled); background: transparent; cursor: default; }
-.k-dd__desc { display: block; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-secondary); }
+.k-dd__desc { display: block; font-size: 12px; line-height: 15px; font-weight: 500; color: var(--text-secondary); }
 .k-dd__empty { margin: 0; padding: var(--space-4); text-align: center; color: var(--text-secondary); }
 
 /* RadioGroup */

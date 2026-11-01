@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- `Dropdown`: a custom select that matches Klar's menus, with icons, descriptions, groups, search, full keyboard support and the same motion as menus. It never gets clipped inside a `Modal`.
+- `Dropdown`: a custom select that matches Klar's menus, with icons, descriptions, groups, search, full keyboard support and the same motion as menus. Its list is more compact and lighter than an action menu (30 px options, 13 px). It never gets clipped inside a `Modal`.
 - `Table` takes `rowMenu`: a right-click anywhere on a row opens its menu, and the row stays highlighted while it is open.
 - `ContextMenu` stays inside the window near the edges, and nested right-click areas no longer open two menus.
 - `IconName` lists every icon Klar ships with.

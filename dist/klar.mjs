@@ -548,7 +548,7 @@ function Dropdown(p) {
   function show() {
     if (p.disabled || !trigger.current) return;
     var r = trigger.current.getBoundingClientRect();
-    var panelHeight = Math.min(296, choices.length * 32 + 8) + (p.search ? 48 : 0);
+    var panelHeight = Math.min(280, choices.length * 30 + 8) + (p.search ? 38 : 0);
     var below = window.innerHeight - r.bottom, up = below < panelHeight + 12 && r.top > below;
     pos[1]({ left: r.left, width: r.width, top: up ? void 0 : r.bottom + 6, bottom: up ? window.innerHeight - r.top + 6 : void 0, up });
     q[1]("");
@@ -688,8 +688,8 @@ function Dropdown(p) {
               pick(o);
             }
           },
-          h("span", { className: "k-menu__check" }, on ? h(Icon, { name: "check", size: 14, weight: 2.5 }) : null),
-          o.icon ? h(Icon, { name: o.icon, size: 15 }) : null,
+          h("span", { className: "k-menu__check" }, on ? h(Icon, { name: "check", size: 13, weight: 2.5 }) : null),
+          o.icon ? h(Icon, { name: o.icon, size: 14 }) : null,
           h("span", { className: "k-menu__label" }, o.label, o.description ? h("span", { className: "k-dd__desc" }, o.description) : null)
         );
       })

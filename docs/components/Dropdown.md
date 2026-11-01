@@ -3,7 +3,7 @@
 Custom select: a field that opens a list styled like Klar's menus. The default way to pick one value from five or more.
 
 - Trigger looks like `TextField`: `border-strong`, `radius-sm`, 34 px, the chosen label (or `placeholder` in `text-muted`) and a chevron that turns when open. Open, it gets the focus ring.
-- The list is a `Menu` panel: `surface-raised`, `border`, `radius-md`, `shadow-md`, 32 px options, a checkmark in front of the chosen one. At least as wide as the trigger, at most 296 px tall, quiet scrollbar.
+- The list is a `Menu` panel (`surface-raised`, `border`, `radius-md`, `shadow-md`) but lighter than an action menu: 30 px options in 13 px at weight 500, the chosen one at 700 with a checkmark in front. As wide as the trigger, at most 280 px tall, quiet scrollbar.
 - Options can have an `icon` and a one-line `description`; `{ section }` adds a heading; `disabled` options are skipped.
 - `search` adds a search field at the top that filters as you type - use it from about eight options.
 - Opens below the field, or above it when there is no room. The list is `position: fixed`, so it is never clipped inside a `Modal`, a table or a scrolling page; scrolling the page closes it.
