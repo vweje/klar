@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Klar · Monochrome design system for React</title>
+  <meta name="description" content="Klar is a sharp, monochrome design system for React: design tokens, 40 components and themes for Tailwind v4 and shadcn/ui.">
+  <meta property="og:title" content="Klar · Monochrome design system for React">
+  <meta property="og:description" content="Black, white and nothing extra. Tokens, 40 React components and themes for Tailwind v4 and shadcn/ui.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://klar.vweje.dk/">
+  <meta property="og:image" content="https://raw.githubusercontent.com/vweje/klar/main/.github/preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2309090b'/%3E%3Cpath d='M11 8v16M21 8l-8 8 8 8' fill='none' stroke='%23fafafa' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>
+    // Apply the saved theme before first paint so the page never flashes the wrong one.
+    try { var saved = localStorage.getItem('klar-theme'); if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved); } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="../dist/klar.css">
+  <style>
+    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    a { color: inherit; }
+    :where(a, button):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+    .col { max-width: 680px; margin: 0 auto; padding: 0 var(--space-6); }
+    .wide { max-width: 1040px; margin: 0 auto; padding: 0 var(--space-6); }
+
+    .nav { position: sticky; top: 0; z-index: 40; background: var(--canvas); }
+    .nav__inner { display: flex; align-items: center; gap: var(--space-5); max-width: 1040px; height: 64px; margin: 0 auto; padding: 0 var(--space-6); }
+    .logo { display: flex; align-items: center; gap: 10px; margin-right: auto; font-size: 15px; font-weight: 800; letter-spacing: -0.02em; text-decoration: none; }
+    .logo b { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); background: var(--primary); color: var(--on-primary); font-size: 12px; }
+    .nav a:not(.logo) { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-decoration: none; transition: color 120ms ease; }
+    .nav a:not(.logo):hover { color: var(--text); }
+
+    .hero { padding-top: 120px; padding-bottom: var(--space-16); }
+    .hero h1 { margin: 0 0 var(--space-4); }
+    .hero p { margin: 0; color: var(--text-secondary); }
+    .install { display: flex; align-items: center; gap: var(--space-3); height: var(--control-lg); margin: var(--space-8) 0 var(--space-4); padding: 0 4px 0 var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-family: var(--font-mono); font-size: 13px; }
+    .install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .install span { color: var(--text-muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+    .copy .k-icon + .k-icon { display: none; }
+    .copy.is-copied .k-icon { display: none; }
+    .copy.is-copied .k-icon + .k-icon { display: block; }
+
+    .demo { padding-bottom: var(--space-4); }
+    .demo iframe { display: block; width: 100%; height: 640px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--canvas); }
+    .demo p { margin: var(--space-3) 0 0; font-size: 13px; color: var(--text-muted); text-align: center; }
+    .demo p a { font-weight: 700; color: var(--text-secondary); }
+
+    .section { padding-top: 112px; }
+    .section > .k-overline { margin: 0 0 var(--space-6); color: var(--text-secondary); }
+    .rows { margin: 0; padding: 0; list-style: none; }
+    .rows > * { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--space-4); align-items: baseline; padding: 14px 0; border-top: 1px solid var(--border); }
+    .rows > *:last-child { border-bottom: 1px solid var(--border); }
+    .rows dt, .rows strong { font-weight: 700; }
+    .rows dd { margin: 0; color: var(--text-secondary); }
+
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: var(--space-4) var(--space-2); margin: 0; padding: 0; list-style: none; }
+    .swatches li { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+    .swatches i { display: block; height: 48px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .status { display: flex; flex-wrap: wrap; gap: var(--space-5); margin: var(--space-6) 0 0; padding: 0; list-style: none; font-size: 13px; font-weight: 700; }
+    .status li { display: inline-flex; align-items: center; gap: var(--space-2); }
+    .status i { width: 8px; height: 8px; border-radius: var(--radius-full); }
+
+    .type > div { grid-template-columns: minmax(0, 1fr) auto; }
+    .type p { margin: 0; overflow-wrap: anywhere; }
+    .type span { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+    .names { margin: 0; padding: 0; list-style: none; columns: 4; column-gap: var(--space-4); color: var(--text-secondary); }
+    .names li { padding: 3px 0; }
+    .more { display: inline-block; margin-top: var(--space-6); font-size: 13px; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+    .more:hover { color: var(--text); }
+
+    .code { position: relative; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+    .code pre { margin: 0; padding: var(--space-4) 52px var(--space-4) var(--space-4); overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 20px; }
+    .code .copy { position: absolute; top: 8px; right: 8px; }
+
+    .footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); margin-top: 112px; padding-top: var(--space-6); padding-bottom: var(--space-12); border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
+    .footer a { font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+    .footer a:hover { color: var(--text); }
+
+    @media (max-width: 720px) {
+      .col, .wide, .nav__inner { padding: 0 var(--space-4); }
+      .hero { padding-top: 72px; padding-bottom: var(--space-12); }
+      .hero h1 { font-size: 36px; line-height: 40px; }
+      .demo iframe { height: 560px; }
+      .section { padding-top: 80px; }
+      .rows > * { grid-template-columns: 1fr; gap: 2px; }
+      .type > div { grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); }
+      .names { columns: 2; }
+      .footer { margin-top: 80px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav__inner">
+      <a class="logo" href="#top"><b>K</b>Klar</a>
+      <a href="../examples/">Demo</a>
+      <a href="https://github.com/vweje/klar">GitHub</a>
+      <div class="k-seg" role="radiogroup" aria-label="Theme">
+        <button type="button" role="radio" class="k-seg__item" data-theme-option="light">Light</button>
+        <button type="button" role="radio" class="k-seg__item" data-theme-option="dark">Dark</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero col">
+      <h1 class="k-display">Black, white and nothing extra.</h1>
+      <p class="k-body-lg">Klar is a monochrome design system for React. Tokens, 40 components and themes for Tailwind v4 and shadcn/ui.</p>
+      <div class="install">
+        <span aria-hidden="true">$</span>
+        <code>npm install github:vweje/klar</code>
+        <button type="button" class="k-btn k-btn--ghost k-btn--sm k-btn--icon-only copy" data-copy="npm install github:vweje/klar" aria-label="Copy install command">
+          <svg class="k-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h11v11H9zM5 15V4h11"/></svg>
+          <svg class="k-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </button>
+      </div>
+      <div class="actions">
+        <a class="k-btn k-btn--primary k-btn--md" href="#start"><span>Get started</span></a>
+        <a class="k-btn k-btn--ghost k-btn--md" href="https://github.com/vweje/klar"><span>Read the docs</span></a>
+      </div>
+    </section>
+
+    <section class="demo wide" aria-label="Demo app">
+      <iframe src="../examples/" title="Klar demo app"></iframe>
+      <p>A full screen built with Klar. <a href="../examples/">Open it on its own</a></p>
+    </section>
+
+    <section class="section col" id="principles">
+      <h2 class="k-overline">Principles</h2>
+      <dl class="rows">
+        <div><dt>Black and white</dt><dd>Primary is black in light mode and white in dark. Color only means status.</dd></div>
+        <div><dt>Borders, not shadows</dt><dd>Surfaces are separated by 1 px hairlines. Only floating layers get a shadow.</dd></div>
+        <div><dt>Compact</dt><dd>34 px controls with 14 px text. The text fills the control, not the air.</dd></div>
+        <div><dt>Bold type</dt><dd>Manrope at 500, 700 and 800. Never thin.</dd></div>
+        <div><dt>Solid</dt><dd>No blur, glass, gradients or glow.</dd></div>
+      </dl>
+    </section>
+
+    <section class="section col" id="color">
+      <h2 class="k-overline">Color</h2>
+      <ul class="swatches">
+        <li><i style="background: var(--canvas)"></i>canvas</li>
+        <li><i style="background: var(--surface)"></i>surface</li>
+        <li><i style="background: var(--fill)"></i>fill</li>
+        <li><i style="background: var(--border)"></i>border</li>
+        <li><i style="background: var(--border-strong)"></i>border-strong</li>
+        <li><i style="background: var(--text-muted)"></i>text-muted</li>
+        <li><i style="background: var(--text-secondary)"></i>text-secondary</li>
+        <li><i style="background: var(--text)"></i>text</li>
+      </ul>
+      <ul class="status">
+        <li><i style="background: var(--success)"></i>Success</li>
+        <li><i style="background: var(--warning)"></i>Warning</li>
+        <li><i style="background: var(--danger)"></i>Danger</li>
+      </ul>
+    </section>
+
+    <section class="section col" id="type">
+      <h2 class="k-overline">Type</h2>
+      <div class="rows type">
+        <div><p class="k-display">Clear</p><span data-metrics>display</span></div>
+        <div><p class="k-h1">Projects</p><span data-metrics>h1</span></div>
+        <div><p class="k-h2">This week</p><span data-metrics>h2</span></div>
+        <div><p class="k-h3">Upcoming tasks</p><span data-metrics>h3</span></div>
+        <div><p class="k-body">Updated 2 minutes ago by you.</p><span data-metrics>body</span></div>
+        <div><p class="k-caption">Nov 1, 2026 · 2:32 PM</p><span data-metrics>caption</span></div>
+        <div><p class="k-code">npm run dev</p><span data-metrics>code</span></div>
+      </div>
+    </section>
+
+    <section class="section col" id="components">
+      <h2 class="k-overline">40 components</h2>
+      <ul class="names">
+        <li>Accordion</li><li>Avatar</li><li>AvatarGroup</li><li>Badge</li><li>Button</li><li>Callout</li><li>Card</li><li>Checkbox</li><li>CommandPalette</li><li>ContextMenu</li>
+        <li>Dialog</li><li>Drawer</li><li>EmptyState</li><li>Icon</li><li>Kbd</li><li>List</li><li>ListRow</li><li>Menu</li><li>MenuPanel</li><li>Pagination</li>
+        <li>ProgressBar</li><li>RadioGroup</li><li>SearchField</li><li>SegmentedControl</li><li>Select</li><li>Sidebar</li><li>Skeleton</li><li>Slider</li><li>Spinner</li><li>Stat</li>
+        <li>Switch</li><li>Table</li><li>Tabs</li><li>TextField</li><li>Textarea</li><li>Toast</li><li>Toaster</li><li>toast()</li><li>Tooltip</li><li>Topbar</li>
+      </ul>
+      <a class="more" href="https://github.com/vweje/klar/tree/main/docs/components">Usage guidelines for each one →</a>
+    </section>
+
+    <section class="section col" id="start">
+      <h2 class="k-overline">Get started</h2>
+      <div class="code">
+        <pre><code id="snippet">// app/layout.tsx
+import 'klar/styles.css';
+import { Toaster } from 'klar';
+
+export default function RootLayout({ children }) {
+  return (
+    &lt;html lang="en"&gt;
+      &lt;body&gt;
+        {children}
+        &lt;Toaster /&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+  );
+}</code></pre>
+        <button type="button" class="k-btn k-btn--ghost k-btn--sm k-btn--icon-only copy" data-copy-from="#snippet" aria-label="Copy code">
+          <svg class="k-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h11v11H9zM5 15V4h11"/></svg>
+          <svg class="k-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </button>
+      </div>
+      <a class="more" href="https://github.com/vweje/klar#theming">Tailwind, shadcn/ui and dark mode →</a>
+    </section>
+
+    <footer class="footer col">
+      <span>Klar 1.0 · MIT · Viggo Weje</span>
+      <a href="https://github.com/vweje/klar">GitHub</a>
+    </footer>
+  </main>
+
+  <script>
+    var root = document.documentElement;
+    var darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function currentTheme() { return root.getAttribute('data-theme') || (darkQuery.matches ? 'dark' : 'light'); }
+    function syncTheme() {
+      document.querySelectorAll('[data-theme-option]').forEach(function (button) {
+        var on = button.getAttribute('data-theme-option') === currentTheme();
+        button.classList.toggle('k-seg__item--on', on);
+        button.setAttribute('aria-checked', on);
+      });
+    }
+    function setTheme(theme) {
+      root.setAttribute('data-theme', theme);
+      try { localStorage.setItem('klar-theme', theme); } catch (e) {}
+      syncTheme();
+    }
+    document.querySelectorAll('[data-theme-option]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var theme = button.getAttribute('data-theme-option');
+        setTheme(theme);
+        var demo = document.querySelector('.demo iframe');
+        if (demo && demo.contentWindow) demo.contentWindow.postMessage({ klarTheme: theme }, location.origin);
+      });
+    });
+    // The embedded demo reports when its own dark mode switch is used, so the page follows.
+    window.addEventListener('message', function (e) {
+      if (e.origin === location.origin && e.data && e.data.klarTheme) setTheme(e.data.klarTheme);
+    });
+    darkQuery.addEventListener('change', syncTheme);
+    syncTheme();
+
+    document.querySelectorAll('.copy').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var source = button.getAttribute('data-copy-from');
+        var text = source ? document.querySelector(source).textContent : button.getAttribute('data-copy');
+        if (!navigator.clipboard) return;
+        navigator.clipboard.writeText(text).then(function () {
+          var label = button.getAttribute('aria-label');
+          button.classList.add('is-copied');
+          button.setAttribute('aria-label', 'Copied');
+          setTimeout(function () { button.classList.remove('is-copied'); button.setAttribute('aria-label', label); }, 1600);
+        });
+      });
+    });
+
+    // Read the sizes from the type classes themselves, so the labels never drift from the tokens.
+    document.querySelectorAll('[data-metrics]').forEach(function (label) {
+      var style = getComputedStyle(label.previousElementSibling);
+      label.textContent = label.textContent + '  ' + parseInt(style.fontSize, 10) + ' / ' + style.fontWeight;
+    });
+  </script>
+</body>
+</html>
