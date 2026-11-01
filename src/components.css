@@ -358,13 +358,26 @@ body { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 2
 .k-drawer__body { flex: 1; overflow-y: auto; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
 .k-drawer__foot { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border); }
 
+/* Modal: a large centered screen for editing and details, up to 1200 x 800 */
+.k-modal { display: flex; flex-direction: column; width: 1200px; max-width: 100%; height: 800px; max-height: 100%; box-sizing: border-box; overflow: hidden; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+.k-modal__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border); }
+.k-modal__title { margin: 0; font-size: 18px; line-height: 24px; font-weight: 800; letter-spacing: -0.015em; color: var(--text); }
+.k-modal__desc { margin: 2px 0 0; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.k-modal__body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); }
+.k-modal__foot { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4) var(--space-6); border-top: 1px solid var(--border); }
+@media (max-width: 640px) {
+  .k-scrim:has(> .k-modal) { padding: 0; }
+  .k-modal { width: 100%; height: 100%; border: 0; border-radius: 0; }
+  .k-modal__head, .k-modal__body, .k-modal__foot { padding-left: var(--space-4); padding-right: var(--space-4); }
+}
+
 /* ===== Motion =====
    Opening uses --ease-out, closing the shorter --duration-fast with --ease-in.
    .k-leaving is set by the components while they animate out; the JS waits for the same tokens before unmounting. */
 .k-scrim { animation: k-fade-in var(--duration-slow) var(--ease-out); }
 .k-scrim.k-leaving { animation: k-fade-out var(--duration-fast) var(--ease-in) forwards; pointer-events: none; }
-.k-scrim > .k-dialog { animation: k-rise-in var(--duration-slow) var(--ease-out); }
-.k-scrim.k-leaving > .k-dialog { animation: k-rise-out var(--duration-fast) var(--ease-in) forwards; }
+.k-scrim > .k-dialog, .k-scrim > .k-modal { animation: k-rise-in var(--duration-slow) var(--ease-out); }
+.k-scrim.k-leaving > .k-dialog, .k-scrim.k-leaving > .k-modal { animation: k-rise-out var(--duration-fast) var(--ease-in) forwards; }
 .k-scrim--top > .k-cmdk { transform-origin: top center; animation: k-drop-in var(--duration-slow) var(--ease-out); }
 .k-scrim--top.k-leaving > .k-cmdk { animation: k-drop-out var(--duration-fast) var(--ease-in) forwards; }
 .k-scrim--drawer.k-leaving { animation-duration: var(--duration-base); }

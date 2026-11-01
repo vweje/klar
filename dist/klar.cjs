@@ -49,6 +49,7 @@ __export(klar_exports, {
   ListRow: () => ListRow,
   Menu: () => Menu,
   MenuPanel: () => MenuPanel,
+  Modal: () => Modal,
   Pagination: () => Pagination,
   ProgressBar: () => ProgressBar,
   RadioGroup: () => RadioGroup,
@@ -1160,4 +1161,23 @@ function Drawer(p) {
     p.footer ? h("footer", { className: "k-drawer__foot" }, p.footer) : null
   );
   return p.overlay ? h("div", { className: cx("k-scrim k-scrim--drawer k-scrim--" + (p.side || "right"), presence.leaving && "k-leaving"), onMouseDown: onScrimDown(p.onClose) }, panel) : panel;
+}
+function Modal(p) {
+  var id = R.useId();
+  var presence = usePresence(p.open !== false, "duration-fast");
+  useEscape(p.open !== false && !!p.onClose, p.onClose);
+  if (!presence.show) return null;
+  var panel = h(
+    "div",
+    { className: cx("k-modal", p.className), role: "dialog", "aria-modal": true, "aria-labelledby": id },
+    h(
+      "header",
+      { className: "k-modal__head" },
+      h("div", null, h("h2", { id, className: "k-modal__title" }, p.title), p.description ? h("p", { className: "k-modal__desc" }, p.description) : null),
+      p.onClose ? h(Button, { size: "sm", variant: "ghost", icon: "xmark", "aria-label": strings.close, onClick: p.onClose }) : null
+    ),
+    h("div", { className: "k-modal__body" }, p.children),
+    p.footer ? h("footer", { className: "k-modal__foot" }, p.footer) : null
+  );
+  return h("div", { className: cx("k-scrim", presence.leaving && "k-leaving"), onMouseDown: onScrimDown(p.onClose) }, panel);
 }

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `Modal`: a large centered screen (up to 1200 x 800, full screen on phones) for editing and details, with the same entrance and exit as `Dialog`.
+- The demo uses the full width of the content area, edits tasks in a `Modal` and has a settings page.
+- The sidebar token is 300 px instead of 240 px.
 - Motion tokens: `duration-fast`, `duration-base`, `duration-slow`, `ease-out` and `ease-in`. Every transition in the components now uses them.
 - `setTheme()` switches between light and dark with a single crossfade.
 - Menus, context menus, dialogs, the drawer, the command palette, toasts and accordions animate in and out with opacity and transform only.

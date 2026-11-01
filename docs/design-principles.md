@@ -40,7 +40,8 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 
 - 4-point grid: `space-1` (4) to `space-16` (64).
 - Padding: `space-4` in lists, `space-5` in cards and dialogs. `space-6` between groups, `space-8` between sections.
-- App layout: `Sidebar` (240 px) on the left, `Topbar` (56 px) at the top, content on `canvas` with `space-8` margin and a max width of about 960 px.
+- App layout: `Sidebar` (300 px) on the left, `Topbar` (56 px) at the top, content on `canvas` with `space-8` margin, using the full width of the content area.
+- Settings: one section per topic with a hairline between; the title and a one-line description on the left (1/3), the controls on the right (2/3).
 - On mobile: hide the sidebar behind a menu button; use `lg` buttons.
 
 ## Corners
@@ -55,7 +56,7 @@ Klar is a sharp, monochrome design system: black and white, thin borders, small 
 
 ## Motion
 
-- Quick and calm, from three duration tokens: `duration-fast` (120 ms) for hover, color changes and everything that closes; `duration-base` (180 ms) for menus, tooltips, toasts and accordions opening; `duration-slow` (240 ms) for dialogs, the drawer, the command palette and the theme switch.
+- Quick and calm, from three duration tokens: `duration-fast` (120 ms) for hover, color changes and everything that closes; `duration-base` (180 ms) for menus, tooltips, toasts and accordions opening; `duration-slow` (240 ms) for dialogs, the modal, the drawer, the command palette and the theme switch.
 - Things arrive with `ease-out` and leave with `ease-in`, and they leave faster than they arrive.
 - Only `opacity` and `transform` move: menus drop 4 px into place, dialogs rise 8 px, the drawer slides from its side, toasts rise from below. Never width, height or position.
 - Switching theme is one crossfade of the whole page (`setTheme()`), never every color changing on its own.
@@ -81,7 +82,7 @@ Install with `npm install github:vweje/klar`, import `klar/styles.css`, and impo
 - Input: `TextField`, `Textarea`, `Select`, `SearchField`, `Checkbox`, `RadioGroup`, `Switch`, `Slider`, `SegmentedControl`.
 - Content and data: `List`/`ListRow`, `Table`, `Card`, `Stat`, `Badge`, `Avatar`/`AvatarGroup`, `Accordion`, `Kbd`, `Tooltip`.
 - Actions and menus: `Button`, `Menu` (dropdown), `ContextMenu` (right-click), `CommandPalette` (⌘K).
-- Layers: `Dialog` for decisions, `Drawer` for editing in a side panel.
+- Layers: `Dialog` for decisions, `Modal` for editing and details in the center, `Drawer` when the list behind must stay visible.
 - Feedback: `Toaster` + `Klar.toast()` for notifications, `Toast`, `Callout`, `ProgressBar`, `Skeleton`, `Spinner`, `EmptyState`.
 
 ## Layering

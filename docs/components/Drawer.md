@@ -8,4 +8,4 @@ Side panel that slides in from the right (or left) - for details and editing wit
 
 The consumer provides: `title`, optionally `description`, content as children, `footer`, `side`, `overlay`, `open`, and `onClose`.
 
-Use `Dialog` for short decisions; `Drawer` for forms and details.
+Use `Dialog` for short decisions and `Modal` for editing and details. Use `Drawer` only when the list behind must stay visible.

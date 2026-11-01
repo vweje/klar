@@ -4,7 +4,7 @@ Recipes for common screens and situations - which components to use and how to c
 
 ## App shell
 
-- `Sidebar` (240 px) on the left, `Topbar` (56 px) at the top, content on `canvas` with `space-8` margin.
+- `Sidebar` (300 px) on the left, `Topbar` (56 px) at the top, content on `canvas` with `space-8` margin.
 - Page title in `h1` at the top of the content with a short subtitle in `text-secondary`; period picker (`SegmentedControl`) on the right.
 - At most one primary button per screen - typically "New …" in the `Topbar`.
 - On mobile: hide the sidebar behind a ghost icon button in the `Topbar`, and give the content `space-6` margin.
@@ -27,7 +27,8 @@ Recipes for common screens and situations - which components to use and how to c
 ## Editing an item
 
 - Short edits (1-3 fields): inline in the row or in a `Dialog`.
-- Longer edits: `Drawer` from the right, so the list behind stays visible.
+- Longer edits and details: `Modal` in the center - main content on the left, details in a narrow column on the right.
+- `Drawer` only when the list behind must stay visible while editing.
 - Destructive actions: `Menu` or `ContextMenu` with a `danger` item at the bottom → confirm in a `Dialog` with a `danger` button → confirm the result with a toast with "Undo".
 
 ## Right-click and shortcuts

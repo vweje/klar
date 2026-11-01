@@ -6,7 +6,7 @@
 
 <p align="center">
   A sharp, monochrome design system for React.<br>
-  Tokens, 40 components, and themes for Tailwind v4 and shadcn/ui.
+  Tokens, 41 components, and themes for Tailwind v4 and shadcn/ui.
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@
 
 Klar (Danish for *clear*) is black and white by design: thin borders, small radii, compact controls and bold type set in Manrope. There is no accent color - contrast does the work, and color only ever means status.
 
-- **40 React components** - forms, tables, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, drawers and toast notifications.
+- **41 React components** - forms, tables, KPI cards, menus with submenus, context menus, a ⌘K command palette, dialogs, modals, drawers and toast notifications.
 - **Design tokens** as CSS variables, with light and dark mode out of the box.
 - **Drop-in themes** for Tailwind v4 and shadcn/ui, so existing projects can adopt the look without a rewrite.
 - **Zero dependencies** besides React 18+. Works with the Next.js App Router, Vite, or a plain `<script>` tag.
@@ -88,7 +88,7 @@ The package ships with `"use client"`, so components without function props (`Ca
 | **Inputs** | `TextField` `Textarea` `Select` `SearchField` `Checkbox` `RadioGroup` `Switch` `Slider` `SegmentedControl` |
 | **Data display** | `Table` `List` `ListRow` `Card` `Stat` `Badge` `Avatar` `AvatarGroup` `Accordion` `Tooltip` `Kbd` `Icon` |
 | **Actions and menus** | `Button` `Menu` `MenuPanel` `ContextMenu` `CommandPalette` |
-| **Overlays** | `Dialog` `Drawer` |
+| **Overlays** | `Dialog` `Modal` `Drawer` |
 | **Feedback** | `Toaster` `toast()` `Toast` `Callout` `ProgressBar` `Skeleton` `Spinner` `EmptyState` |
 
 Every component has usage guidelines in [`docs/components`](docs/components). Props are typed in [`dist/index.d.ts`](dist/index.d.ts).
